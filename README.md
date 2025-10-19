@@ -22,7 +22,7 @@ cd CSE299-Group-3
 
 Follow these steps to run the backend API and the frontend app locally. This repository already includes environment files; review and update them if needed.
 
-### env.example
+### env.example(implement in backend)
 
 ```
 OPENSSL_CONF=/home/safat/.mongodb-tls-fix/openssl_no_rh.conf
@@ -101,6 +101,8 @@ Ensure your production environment variables are set appropriately before starti
 
 
 ## Update-1
+
+[Video Demo](https://youtu.be/MfleyOah9Zo)
 
 Backend (Done by Safat):
 - Set up Express server with CORS and request logging (morgan), environment variables via dotenv, and MongoDB connection using Mongoose.
