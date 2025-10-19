@@ -1,7 +1,7 @@
 import { createContext, use, useContext, useEffect, useState } from "react";
 import type { User } from "@/types";
 import type { is } from "zod/v4/locales";
-import { queryClient } from "./react-query-provider";
+import { queryClient } from "../root";
 import { useLocation, useNavigate } from "react-router";
 import { publicRoutes } from "@/lib";
 import { set } from "zod";
