@@ -10,6 +10,7 @@ import { Link, useNavigate } from "react-router";
 import { useSignUpMutation } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { route } from "@react-router/dev/routes";
+import { useEffect } from "react";
 
 export type SignupFormData = z.infer<typeof signUpSchema>;
 
@@ -26,6 +27,23 @@ const SignUp = () => {
     });
 
     const {mutate, isPending} = useSignUpMutation();
+
+    // Prevent back navigation and redirect to home
+    useEffect(() => {
+        // Push current state to prevent back
+        window.history.pushState(null, "", window.location.href);
+        
+        const handlePopState = () => {
+            // Redirect to home when back button is pressed
+            navigate("/", { replace: true });
+        };
+
+        window.addEventListener("popstate", handlePopState);
+
+        return () => {
+            window.removeEventListener("popstate", handlePopState);
+        };
+    }, [navigate]);
 
     const handleOnSubmit = (values: SignupFormData) => {
       mutate(values, {

@@ -11,6 +11,7 @@ import { useLoginMutation } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { Loader, Loader2 } from "lucide-react";
 import { useAuth } from "@/provider/auth-context";
+import { useEffect } from "react";
 
 type SigninFormData = z.infer<typeof signInSchema>;
 const SignIn = () => {
@@ -26,6 +27,23 @@ const SignIn = () => {
     });
 
     const { mutate, isPending } = useLoginMutation();
+
+    // Prevent back navigation and redirect to home
+    useEffect(() => {
+        // Push current state to prevent back
+        window.history.pushState(null, "", window.location.href);
+        
+        const handlePopState = () => {
+            // Redirect to home when back button is pressed
+            navigate("/", { replace: true });
+        };
+
+        window.addEventListener("popstate", handlePopState);
+
+        return () => {
+            window.removeEventListener("popstate", handlePopState);
+        };
+    }, [navigate]);
 
     const handleOnSubmit = (values: SigninFormData) => {
       mutate(values, {
