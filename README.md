@@ -1,21 +1,39 @@
 # CSE299-Group-3
 
+## Clone this repository
+
+You can clone via HTTPS or SSH:
+
+```bash
+# HTTPS
+git clone https://github.com/SafatUddin/CSE299-Group-3.git
+
+# or SSH
+git clone git@github.com:SafatUddin/CSE299-Group-3.git
+```
+
+Then:
+
+```bash
+cd CSE299-Group-3
+```
+
 ## How to Run
 
-Follow these steps to run the backend API and the frontend app locally. This repository already includes example environment files; review and update them if needed.
+Follow these steps to run the backend API and the frontend app locally. This repository already includes environment files; review and update them if needed.
 
 ### Prerequisites
 - Node.js 18+ and npm
 - Internet access to install dependencies
-- A MongoDB connection string (used by the backend)
+- A MongoDB connection string (already provided in this instance)
 
 ### Environment variables
 This repo contains `.env` files. Make sure the values are correct for your machine:
 - Backend (`Main/backend/.env`):
 	- `PORT` (default 5000)
-	- `MONGODB_URI` (your MongoDB connection string)
+	- `MONGODB_URI` (I have given my MongoDB connection string change if you need it)
 	- `FRONTEND_URL` (e.g., `http://localhost:3000` or the dev URL printed by the frontend)
-	- Any email or auth keys your features require (e.g., `SENDGRID_API_KEY`, `JWT_SECRET`)
+	- Email or auth keys your features require (e.g., `SENDGRID_API_KEY`, `JWT_SECRET`)
 - Frontend: configure API base URLs in code or via environment as your app expects.
 
 If you change the frontend dev port, update `FRONTEND_URL` in the backend `.env` so CORS allows requests.
