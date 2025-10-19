@@ -22,6 +22,25 @@ cd CSE299-Group-3
 
 Follow these steps to run the backend API and the frontend app locally. This repository already includes environment files; review and update them if needed.
 
+### env.example
+
+```
+OPENSSL_CONF=/home/safat/.mongodb-tls-fix/openssl_no_rh.conf
+PORT=5000
+MONGODB_URI=mongodb+srv://SafatUddin:voodoovader@cluster0.eshlohp.mongodb.net/CSE299?retryWrites=true&w=majority&appName=Cluster0
+JWT_SECRET=anakinthechosenonedarthvader
+FRONTEND_URL=http://localhost:5173
+SEND_GRID_API=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
+FROM_EMAIL=mekakashi17@gmail.com
+
+
+ARCJET_ENV=development
+
+
+ARCJET_KEY=ajkey_01k7b2wbsnfvsrhgs9dbqxg5e2
+```
+
+
 ### Prerequisites
 - Node.js 18+ and npm
 - Internet access to install dependencies
