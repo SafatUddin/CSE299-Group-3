@@ -20,26 +20,8 @@ cd CSE299-Group-3
 
 ## How to Run
 
-Follow these steps to run the backend API and the frontend app locally. This repository already includes environment files; review and update them if needed.
+Follow these steps to run the backend API and the frontend app locally. This repository already includes .env.example file; review and create one for yourself in the backend accordingly.
 
-### env.example
-
-(implement this in the backend)
-```
-OPENSSL_CONF=/home/safat/.mongodb-tls-fix/openssl_no_rh.conf
-PORT=5000
-MONGODB_URI=mongodb+srv://SafatUddin:voodoovader@cluster0.eshlohp.mongodb.net/CSE299?retryWrites=true&w=majority&appName=Cluster0
-JWT_SECRET=anakinthechosenonedarthvader
-FRONTEND_URL=http://localhost:5173
-SEND_GRID_API=REDACTED-SENDGRID
-FROM_EMAIL=mekakashi17@gmail.com
-
-
-ARCJET_ENV=development
-
-
-ARCJET_KEY=ajkey_01k7b2wbsnfvsrhgs9dbqxg5e2
-```
 
 
 ### Prerequisites
@@ -48,7 +30,7 @@ ARCJET_KEY=ajkey_01k7b2wbsnfvsrhgs9dbqxg5e2
 - A MongoDB connection string (already provided in this instance)
 
 ### Environment variables
-This repo contains `.env` files. Make sure the values are correct for your machine:
+This repo needs `.env` files. Make sure the values are correct for your machine:
 - Backend (`Main/backend/.env`):
 	- `PORT` (default 5000)
 	- `MONGODB_URI` (I have given my MongoDB connection string change if you need it)
