@@ -134,7 +134,7 @@ Project flow (how it works end-to-end):
 
 ## Update-2
 
-[Video Demo]()
+[Video Demo](https://youtu.be/xuENJUFW21o)
 
 [Update-1 Report](./Others/Update-2.pdf)
 
