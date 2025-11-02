@@ -1,5 +1,3 @@
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-
 export const WorkspaceAvatar = ({
      color,
      name

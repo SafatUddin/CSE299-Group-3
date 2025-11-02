@@ -38,9 +38,6 @@ export const Header = ({
     onWorkspaceSelected(workspace);
     const location = window.location;
 
-    // navigate to the workspace details route. The app routes define
-    // the workspace details path as "/workspace/:workspaceId" (singular),
-    // so use that to ensure the route resolves correctly.
     if (isOnWorkspacePage) {
       navigate(`/workspace/${workspace._id}`);
     } else {
@@ -109,7 +106,7 @@ export const Header = ({
               <button className="rounded-full border p-0 w-10 h-10 overflow-hidden">
                 <Avatar className="w-full h-full">
                   <AvatarImage src={user?.profilePicture} alt={user?.name} />
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+                  <AvatarFallback className="bg-gray-900 text-white dark:bg-gray-800">
                     {user?.name?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

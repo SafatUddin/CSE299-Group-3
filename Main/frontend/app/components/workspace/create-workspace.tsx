@@ -66,9 +66,8 @@ export const CreateWorkspace = ({
         onSuccess: (data: any) => {
             form.reset();
             setIsCreatingWorkspace(false);
-                toast.success("Workspace created successfully");
-                // Navigate to the workspace details route (singular) to match routes.ts
-                navigate(`/workspace/${data._id}`);
+            toast.success("Workspace created successfully");
+            navigate(`/workspace/${data._id}`);
         },
         onError: (error: any) => {
             const errorMessage = error.response.data.message;

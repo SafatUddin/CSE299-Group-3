@@ -34,7 +34,7 @@ export const SidebarComponent = ({
     },
     {
       title: "Workspaces",
-      href: "/workspace",
+      href: "/workspaces",
       icon: Users,
     },
     {

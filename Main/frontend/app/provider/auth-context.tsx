@@ -1,10 +1,8 @@
 import { createContext, use, useContext, useEffect, useState } from "react";
 import type { User } from "@/types";
-import { tr, type is } from "zod/v4/locales";
 import { queryClient } from "./react-query-provider";
 import { useLocation, useNavigate } from "react-router";
 import { publicRoutes } from "@/lib";
-import { set } from "zod";
 
 interface AuthContextType {
     user: User | null;

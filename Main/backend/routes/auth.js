@@ -1,5 +1,4 @@
 import express from "express";
-import { z } from "zod";
 import { validateRequest } from "zod-express-middleware";
 import { emailSchema, loginSchema, registerSchema, resetPasswordSchema, verifyEmailSchema } from "../libs/validate-schema.js";
 import { loginUser, registerUser, resetPasswordRequest, verifyEmail, verifyResetPasswordTokenAndResetPassword } from "../controllers/auth-controller.js";
