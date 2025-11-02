@@ -138,8 +138,6 @@ Project flow (how it works end-to-end):
 
 [Update-1 Report](./Others/Update-2.pdf)
 
-# Project Overview
-
 
 **Backend: (Done by Safat)**
 
@@ -176,3 +174,53 @@ Database models defined with Mongoose: User, Workspace, Project, Task, Comment, 
 **State management** with Auth Context and TanStack Query for API calls. Custom hooks (useAuth, useWorkspace, useProject) for data fetching. (Done by Safat)
 
 **Project structure**, routes organized by feature, reusable UI components (Radix UI + Tailwind), TypeScript types, and API utilities with JWT token handling.(Done by Safat)
+
+
+## Update-3
+
+[Video Demo]()
+
+[Update-1 Report](./Others/Update-3.pdf)
+
+**Backend:** *(Done by Safat)*
+
+- *Task list:* returns the project plus its non‑archived tasks (populates assignees) for the frontend to render the task columns.
+
+- *Create task:*  validates input, creates a Task document (title, description, status, priority, assignees, dueDate, subtasks) and links it to the project.
+
+- *Task details:* the task record with populated assignees/watchers and basic project info so the frontend can render the detail page.
+
+- *Task updates:* apply the specific change on the Task document and record an activity entry for audit/history.
+
+- *Subtasks:*
+  - Add subtask: appends a subtask item to the task.
+  - Update subtask: mark complete/incomplete or edit subtask.
+
+- *Comments:*
+  - Add comment: creates a Comment record linked to the task and author.
+  - List comments: returns comments with author metadata.
+  - Each comment creation also adds an activity record so comments show up in the activity feed.
+
+- *Activity:* controllers write Activity documents for notable actions (create, update, comment, subtask changes). The endpoint returns the timeline for the resource.
+
+- *Watchers:* adds/removes the current user to the task's `watchers` list so they receive updates; also records activity.
+
+**Frontend:** *(Done by Farhan, Zunayed, Safat)* 
+
+- *Task list:* Shows tasks in three columns: To Do, In Progress, Done. *(Done by Farhan)*
+
+- *Create task:* A modal form with fields: title, description, status, priority, due date, assignees. The form validates input, sends the new task to the server, then closes and refreshes the list. *(Done by Farhan)*
+
+- *Task view:* Dedicated page showing title, description, status, priority, assignees, subtasks, comments, activity, and watchers. *(Done by Farhan)*
+
+- *Subtasks:* You can add subtasks and toggle them complete/incomplete. *(Done by Zunayed)*
+
+- *Comments:* Comments are fetched from the server and shown in a scrollable area with author and time. *(Done by Zunayed)*
+
+- *Activity:* Activity shows a timeline of actions (created, updated, commented, subtasks). *(Done by Farhan)*
+
+- *Watchers:* Users can watch a task to follow updates; toggling watch sends a request to the server. The UI shows who is watching and updates after the server confirms the change. *(Done by Zunayed)*
+
+- State management with Auth Context and TanStack Query for API calls. Custom hooks (use-project, use-task) for data fetching. *(Done by Safat)*
+
+- Routes organized by feature,, TypeScript types, and API utilities with JWT token handling. *(Done by Safat)*
