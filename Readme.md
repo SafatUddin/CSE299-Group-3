@@ -1,4 +1,6 @@
-# CSE299-Group-3
+# CSE299-Group-3 
+
+# ProjectFlow -> A project management app
 
 ### Clone this repository
 
@@ -33,11 +35,7 @@ JWT_SECRET=anakinthechosenonedarthvader
 FRONTEND_URL=http://localhost:5173
 SEND_GRID_API=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
 FROM_EMAIL=mekakashi17@gmail.com
-
-
 ARCJET_ENV=development
-
-
 ARCJET_KEY=ajkey_01k7b2wbsnfvsrhgs9dbqxg5e2
 ```
 
@@ -178,7 +176,7 @@ Database models defined with Mongoose: User, Workspace, Project, Task, Comment, 
 
 ## Update-3
 
-[Video Demo]()
+[Video Demo](https://www.youtube.com/watch?v=BlY-rLW3M20)
 
 [Update-1 Report](./Others/Update-3.pdf)
 
