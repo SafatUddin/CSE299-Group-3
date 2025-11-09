@@ -1,5 +1,15 @@
 # CSE299-Group-3 
 
+## Group Members
+
+| Name 					|	  ID  	 |
+|-----------------------|------------|
+| Safat Uddin 			| 2311966642 |
+| Farhan Karim  		| 2311970642 |
+| Faizur Rahman Zunayed | 2312137642 |
+
+****
+
 # ProjectFlow -> A project management app
 
 ### Clone this repository
@@ -98,7 +108,7 @@ Ensure your production environment variables are set appropriately before starti
 [Project Proposal Presentation](./Others/Project_Proposal_Group-3_Presentation.pdf) -> [Alternate link](https://drive.google.com/file/d/1c_V2gUpclm6B3QuC5Vt8E9SqDrkchXZt/view?usp=drive_link)
 
 
-
+****
 ## Update-1
 
 [Update-1 Video Demo](https://youtu.be/MfleyOah9Zo)
@@ -132,6 +142,7 @@ Project flow (how it works end-to-end):
 - On login, the backend validates password and verification status. If unverified/expired, a new verification flow is triggered. On success, a login JWT is returned and the frontend stores session state.
 - If the user forgets their password, the frontend starts a reset flow; the backend generates a time-limited reset token, emails a link, and on confirmation updates the password
 
+****
 ## Update-2
 
 [Update-2 Video Demo](https://www.youtube.com/watch?v=xuENJUFW21o)
@@ -176,7 +187,7 @@ Database models defined with Mongoose: User, Workspace, Project, Task, Comment, 
 
 **Project structure**, routes organized by feature, reusable UI components (Radix UI + Tailwind), TypeScript types, and API utilities with JWT token handling.(Done by Safat)
 
-
+****
 ## Update-3
 
 [Update-3 Video Demo](https://www.youtube.com/watch?v=BlY-rLW3M20)
@@ -228,10 +239,10 @@ Database models defined with Mongoose: User, Workspace, Project, Task, Comment, 
 
 - Routes organized by feature,, TypeScript types, and API utilities with JWT token handling. *(Done by Safat)*
 
-
+****
 ## Update-4
 
-[Update-4 Video Demo]()
+[Update-4 Video Demo](https://youtu.be/SA2I5n1z2JY?si=vjqtUTKGtRYIMrVi)
 
 [Update-4 Report](./Others/Update-4.pdf)
 
@@ -239,7 +250,7 @@ Database models defined with Mongoose: User, Workspace, Project, Task, Comment, 
 
 **Backend:**
 
-*Done By Safat*
+*Done By Safat:*
 - Endpoint `GET /workspace/:workspaceId/stats` gathers all the dashboard data such as total projects and tasks, task status counts, priority breakdown, 7-day task trends, upcoming tasks (next 7 days), and recent projects.
 - Endpoint `GET /tasks/my-tasks` shows tasks assigned to the logged-in user, including project title and workspace info (used in the My Tasks page).
 - The server now handles aggregation logic, it groups and counts tasks, filters upcoming ones by due date, and prepares all data for the dashboard in frontend.
