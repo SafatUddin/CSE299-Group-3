@@ -101,11 +101,13 @@ Ensure your production environment variables are set appropriately before starti
 
 ## Update-1
 
-[Video Demo](https://youtu.be/MfleyOah9Zo)
+[Update-1 Video Demo](https://youtu.be/MfleyOah9Zo)
 
 [Update-1 Report](./Others/Update-1.pdf)
 
-Backend (Done by Safat):
+****
+
+**Backend** (Done by Safat):
 - Set up Express server with CORS and request logging (morgan), environment variables via dotenv, and MongoDB connection using Mongoose.
 - Implemented auth features with validation using zod/zod-express-middleware:
 	- Register: creates user with hashed password (bcrypt), prevents duplicate emails, and sends a verification email via SendGrid with a JWT token stored in a `Verification` collection.
@@ -114,7 +116,7 @@ Backend (Done by Safat):
 	- Forgot/Reset Password: creates and emails a time-limited JWT link; token is checked before allowing password reset.
 - Security and safety: JWT-based flows, CORS tied to `FRONTEND_URL`, and Arcjet email inspection to prevent abuse.
 
-Frontend (Done by Farhan & Zunayed):
+**Frontend** (Done by Farhan & Zunayed):
 - React Router v7 setup with TypeScript, Tailwind CSS, and component library wiring. App includes forms with react-hook-form + zod validation and toast feedback.
 - Auth pages and flows implemented:
 	- The Home page provides a welcoming introduction to the app, with clear calls-to-action for users to either sign up or sign in.(Done by Farhan)
@@ -132,10 +134,11 @@ Project flow (how it works end-to-end):
 
 ## Update-2
 
-[Video Demo](https://www.youtube.com/watch?v=xuENJUFW21o)
+[Update-2 Video Demo](https://www.youtube.com/watch?v=xuENJUFW21o)
 
-[Update-1 Report](./Others/Update-2.pdf)
+[Update-2 Report](./Others/Update-2.pdf)
 
+****
 
 **Backend: (Done by Safat)**
 
@@ -176,9 +179,11 @@ Database models defined with Mongoose: User, Workspace, Project, Task, Comment, 
 
 ## Update-3
 
-[Video Demo](https://www.youtube.com/watch?v=BlY-rLW3M20)
+[Update-3 Video Demo](https://www.youtube.com/watch?v=BlY-rLW3M20)
 
-[Update-1 Report](./Others/Update-3.pdf)
+[Update-3 Report](./Others/Update-3.pdf)
+
+*****
 
 **Backend:** *(Done by Safat)*
 
@@ -222,3 +227,35 @@ Database models defined with Mongoose: User, Workspace, Project, Task, Comment, 
 - State management with Auth Context and TanStack Query for API calls. Custom hooks (use-project, use-task) for data fetching. *(Done by Safat)*
 
 - Routes organized by feature,, TypeScript types, and API utilities with JWT token handling. *(Done by Safat)*
+
+
+## Update-4
+
+[Update-4 Video Demo]()
+
+[Update-4 Report](./Others/Update-4.pdf)
+
+****
+
+**Backend:**
+
+*Done By Safat*
+- Endpoint `GET /workspace/:workspaceId/stats` gathers all the dashboard data such as total projects and tasks, task status counts, priority breakdown, 7-day task trends, upcoming tasks (next 7 days), and recent projects.
+- Endpoint `GET /tasks/my-tasks` shows tasks assigned to the logged-in user, including project title and workspace info (used in the My Tasks page).
+- The server now handles aggregation logic, it groups and counts tasks, filters upcoming ones by due date, and prepares all data for the dashboard in frontend.
+- Updated task-related queries to skip archived items and show only active tasks on the dashboard and task lists and used Zod to check request parameters and queries to ensure only valid data is processed.
+
+**Frontend:**
+
+*Done By Zunayed:*
+- UI components added : `StatsCard`, `StatisticsCharts`, `RecentProjects`, and  `UpcomingTasks` (progress bars, charts, and summary widgets).
+- Added filters, sorting, and search options that sync with the URL using `useSearchParams`.
+- The Dashboard supports workspace scoping through a `workspaceId` query param, and the layout enforces authentication with workspace selection in the header/sidebar. 
+
+*Done By Farhan:*
+- The Dashboard now calls API and displays data through components like `StatsCard`, `StatisticsCharts`, `RecentProjects`, and `UpcomingTasks`. 
+- The My Tasks page fetches tasks from `/tasks/my-tasks` and shows tasks assigned to the current user. 
+- Implemented both `List` view and `Kanban Board` view with task cards showing status, priority, due date, and linked projects in the *`“My Task”`* page.
+
+*Done By Safat:*
+- Created React Query hooks (`use-task.ts`, `use-workspace.ts`) to handle fetching and updating data; relevant queries automatically refresh after mutations. 
