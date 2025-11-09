@@ -4,20 +4,27 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 
 export const useCreateWorkspace = () => {
   return useMutation({
-    mutationFn: async (data: WorkspaceForm) => postData("/workspaces", data),
+    mutationFn: async (data: WorkspaceForm) => postData("/workspace", data),
   });
 };
 
 export const useGetWorkspacesQuery = () => {
   return useQuery({
-    queryKey: ["workspaces"],
-    queryFn: async () => fetchData("/workspaces"),
+    queryKey: ["workspace"],
+    queryFn: async () => fetchData("/workspace"),
   });
 };
 
 export const useGetWorkspaceById = (workspaceId: string) => {
   return useQuery({
     queryKey: ["workspace", workspaceId],
-    queryFn: async () => fetchData(`/workspaces/${workspaceId}/projects`),
+    queryFn: async () => fetchData(`/workspace/${workspaceId}/projects`),
+  });
+};
+
+export const useGetWorkspaceStatsQuery = (workspaceId: string) => {
+  return useQuery({
+    queryKey: ["workspace", workspaceId, "stats"],
+    queryFn: async () => fetchData(`/workspace/${workspaceId}/stats`),
   });
 };

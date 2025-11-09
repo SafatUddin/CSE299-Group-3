@@ -17,6 +17,7 @@ import {
   addComment,
   watchTask,
   achievedTask,
+  getMyTasks
 } from "../controllers/task.js";
 import authMiddleware from "../middleware/auth-middleware.js";
 
@@ -125,6 +126,12 @@ router.put(
     body: z.object({ assignees: z.array(z.string()) }),
   }),
   updateTaskAssignees
+);
+
+router.get(
+  "/my-tasks",
+  authMiddleware,
+  getMyTasks
 );
 
 router.put(

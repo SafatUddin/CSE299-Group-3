@@ -5,13 +5,13 @@ import { CreateWorkspace } from "@/components/workspace/create-workspace";
 import { fetchData } from "@/lib/fetch-util";
 import { useAuth } from "@/provider/auth-context";
 import type { Workspace } from "@/types";
-import { useState } from "react";
-import { Navigate, Outlet } from "react-router";
+import { useState, useEffect } from "react";
+import { Navigate, Outlet, useLocation } from "react-router";
 
 export const clientLoader = async () => {
   try {
-    const [workspaces] = await Promise.all([fetchData("/workspaces")]);
-    return { workspaces };
+    const [workspace] = await Promise.all([fetchData("/workspace")]);
+    return { workspace };
   } catch (error) {
     console.log(error);
   }
@@ -21,6 +21,14 @@ const DashboardLayout = () => {
     const { isAuthenticated, isLoading } = useAuth();
     const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
     const [isCurrentWorkspace, setIsCurrentWorkspace] = useState<Workspace | null>(null);
+    const location = useLocation();
+
+    // Reset workspace selection when navigating to dashboard or workspace list
+    useEffect(() => {
+        if (location.pathname === '/dashboard' || location.pathname === '/workspace') {
+            setIsCurrentWorkspace(null);
+        }
+    }, [location.pathname]);
 
     
     if (isLoading) {

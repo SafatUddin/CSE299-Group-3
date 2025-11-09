@@ -12,8 +12,9 @@ import {
   DropdownMenuGroup,
 } from "../ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
-import { Link, useLoaderData, useLocation, useNavigate } from "react-router";
+import { Link, useLoaderData, useLocation, useNavigate, useParams } from "react-router";
 import { WorkspaceAvatar } from "../workspace/workspace-avatar";
+import { useEffect } from "react";
 
 interface HeaderProps {
   onWorkspaceSelected: (workspace: Workspace) => void;
@@ -27,24 +28,28 @@ export const Header = ({
   onCreateWorkspace,
 }: HeaderProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams();
 
   const { user, logout } = useAuth();
-  // const { workspaces } = useLoaderData() as { workspaces: Workspace[] };
-  const loaderData = useLoaderData() as { workspaces?: Workspace[] } | undefined;
-  const workspaces = loaderData?.workspaces || [];
-  const isOnWorkspacePage = useLocation().pathname.includes("/workspace");
+  const { workspace } = useLoaderData() as { workspace: Workspace[] };
+  
+  // Extract workspaceId from URL if present
+  const workspaceIdFromUrl = params.workspaceId || location.pathname.split('/')[2];
+  
+  // Find workspace from URL if not already selected
+  useEffect(() => {
+    if (workspaceIdFromUrl && (!selectedWorkspace || selectedWorkspace._id !== workspaceIdFromUrl)) {
+      const workspaceFromUrl = workspace?.find(ws => ws._id === workspaceIdFromUrl);
+      if (workspaceFromUrl) {
+        onWorkspaceSelected(workspaceFromUrl);
+      }
+    }
+  }, [workspaceIdFromUrl, workspace, selectedWorkspace, onWorkspaceSelected]);
 
   const handleOnClick = (workspace: Workspace) => {
     onWorkspaceSelected(workspace);
-    const location = window.location;
-
-    if (isOnWorkspacePage) {
-      navigate(`/workspace/${workspace._id}`);
-    } else {
-      const basePath = location.pathname;
-
-      navigate(`${basePath}?workspaceId=${workspace._id}`);
-    }
+    navigate(`/workspace/${workspace._id}`);
   };
 
   return (
@@ -74,7 +79,7 @@ export const Header = ({
             <DropdownMenuSeparator />
 
             <DropdownMenuGroup>
-              {workspaces.map((ws) => (
+              {workspace.map((ws) => (
                 <DropdownMenuItem
                   key={ws._id}
                   onClick={() => handleOnClick(ws)}
