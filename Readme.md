@@ -98,14 +98,19 @@ Ensure your production environment variables are set appropriately before starti
 
 
 
-## Proposal/Review
+## Proposal
 ### Project Proposal
 
 [Project Proposal Report](./Others/CSE299_Project_Proposal_Group-3.pdf)
 
-### Project Proposal Presentation
+### Project Proposal Slides
 
-[Project Proposal Presentation](./Others/Project_Proposal_Group-3_Presentation.pdf) -> [Alternate link](https://drive.google.com/file/d/1c_V2gUpclm6B3QuC5Vt8E9SqDrkchXZt/view?usp=drive_link)
+[Project Proposal Slides](./Others/Project_Proposal_Group-3_Presentation.pdf)
+
+****
+## Literature Review
+
+[Literature Review Slides](./Others/Literature_Review_Group_3.pdf)
 
 
 ****
