@@ -112,6 +112,9 @@ Ensure your production environment variables are set appropriately before starti
 
 [Literature Review Slides](./Others/Literature_Review_Group_3.pdf)
 
+## Proposed Solution
+
+[Proposed Solution Report](./Others/Proposed_solution_report_group_3.pdf)
 
 ****
 ## Update-1
