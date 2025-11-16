@@ -282,7 +282,7 @@ Database models defined with Mongoose: User, Workspace, Project, Task, Comment, 
 
 [Update-5 Video Demo]()
 
-[Update-5 Report]()
+[Update-5 Report](./Others/Update-5.pdf)
 
 ****
 
