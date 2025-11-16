@@ -2,6 +2,7 @@ import express from "express";
 import { z } from "zod";
 import { validateRequest } from "zod-express-middleware";
 import { taskSchema } from "../libs/validate-schema.js";
+import multer from "multer";
 import { 
   createTask,
   getTaskById,
@@ -17,11 +18,30 @@ import {
   addComment,
   watchTask,
   achievedTask,
-  getMyTasks
+  getMyTasks,
+  uploadAttachment,
+  addLinkAttachment,
+  deleteAttachment
 } from "../controllers/task.js";
 import authMiddleware from "../middleware/auth-middleware.js";
 
 const router = express.Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/attachments');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 
 router.post(
   "/:projectId/create-task",
@@ -171,6 +191,38 @@ router.get(
     params: z.object({ taskId: z.string() }),
   }),
   getCommentsByTaskId
+);
+
+router.post(
+  "/:taskId/upload-attachment",
+  authMiddleware,
+  upload.single('file'),
+  uploadAttachment
+);
+
+router.post(
+  "/:taskId/add-link",
+  authMiddleware,
+  validateRequest({
+    params: z.object({ taskId: z.string() }),
+    body: z.object({ 
+      name: z.string().min(1, "Name is required"),
+      url: z.string().url("Please provide a valid URL")
+    }),
+  }),
+  addLinkAttachment
+);
+
+router.delete(
+  "/:taskId/attachment/:attachmentId",
+  authMiddleware,
+  validateRequest({
+    params: z.object({ 
+      taskId: z.string(),
+      attachmentId: z.string()
+    }),
+  }),
+  deleteAttachment
 );
 
 export default router;

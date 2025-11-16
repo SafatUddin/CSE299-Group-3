@@ -144,7 +144,8 @@ export interface CommentReaction {
 export interface Comment {
   _id: string;
   author: User;
-  text: string;
+  content: string; // Backend sends 'content', not 'text'
+  text?: string; // Keep for backward compatibility
   createdAt: Date;
   reactions?: CommentReaction[];
   attachments?: {

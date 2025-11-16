@@ -1,5 +1,4 @@
 import type { User } from "@/types";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export const Watchers = ({ watchers }: { watchers: User[] }) => {
   return (
@@ -10,10 +9,9 @@ export const Watchers = ({ watchers }: { watchers: User[] }) => {
         {watchers && watchers.length > 0 ? (
           watchers.map((watcher) => (
             <div key={watcher._id} className="flex items-center gap-2">
-              <Avatar className="size-6">
-                <AvatarImage src={watcher.profilePicture} />
-                <AvatarFallback>{watcher.name.charAt(0)}</AvatarFallback>
-              </Avatar>
+              <div className="size-6 rounded-full bg-gray-700 flex items-center justify-center text-white font-semibold text-xs">
+                {watcher.name.charAt(0).toUpperCase()}
+              </div>
 
               <p className="text-sm text-muted-foreground">{watcher.name}</p>
             </div>

@@ -1,6 +1,7 @@
 import { BackButton } from "@/components/back-button";
 import { Loader } from "@/components/loader";
 import { CreateTaskDialog } from "@/components/task/create-task-dialog";
+import { EditProject } from "@/components/project/edit-project";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,11 +9,12 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UseProjectQuery } from "@/hooks/use-project";
+import { useGetWorkspaceDetailsQuery } from "@/hooks/use-workspace";
 import { getProjectProgress } from "@/lib";
 import { cn } from "@/lib/utils";
 import type { Project, Task, TaskStatus } from "@/types";
 import { format } from "date-fns";
-import { AlertCircle, Calendar, CheckCircle, Clock } from "lucide-react";
+import { AlertCircle, Calendar, CheckCircle, Clock, Pencil } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
@@ -24,6 +26,7 @@ const ProjectDetails = () => {
   const navigate = useNavigate();
 
   const [isCreateTask, setIsCreateTask] = useState(false);
+  const [isEditProject, setIsEditProject] = useState(false);
   const [taskFilter, setTaskFilter] = useState<TaskStatus | "All">("All");
 
   const { data, isLoading } = UseProjectQuery(projectId!) as {
@@ -32,6 +35,10 @@ const ProjectDetails = () => {
       project: Project;
     } | undefined;
     isLoading: boolean;
+  };
+
+  const { data: workspaceData } = useGetWorkspaceDetailsQuery(workspaceId!) as {
+    data: { members: Array<{ user: any }> } | undefined;
   };
 
   if (isLoading)
@@ -78,6 +85,13 @@ const ProjectDetails = () => {
             </span>
           </div>
 
+          <Button
+            variant="outline"
+            onClick={() => setIsEditProject(true)}
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit Project
+          </Button>
           <Button onClick={() => setIsCreateTask(true)}>Add Task</Button>
         </div>
       </div>
@@ -184,6 +198,19 @@ const ProjectDetails = () => {
         projectId={projectId!}
         projectMembers={project.members as any}
       />
+
+      {/* edit project dialog */}
+      {workspaceData && (
+        <EditProject
+          open={isEditProject}
+          onOpenChange={setIsEditProject}
+          project={project}
+          workspaceId={workspaceId!}
+          workspaceMembers={
+            workspaceData.members?.map((m) => m.user) || []
+          }
+        />
+      )}
     </div>
   );
 };

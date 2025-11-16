@@ -2,26 +2,20 @@ import { Header } from "@/components/layout/header";
 import { SidebarComponent } from "@/components/layout/sidebar-component";
 import { Loader } from "@/components/loader";
 import { CreateWorkspace } from "@/components/workspace/create-workspace";
-import { fetchData } from "@/lib/fetch-util";
 import { useAuth } from "@/provider/auth-context";
 import type { Workspace } from "@/types";
 import { useState, useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
-
-export const clientLoader = async () => {
-  try {
-    const [workspace] = await Promise.all([fetchData("/workspace")]);
-    return { workspace };
-  } catch (error) {
-    console.log(error);
-  }
-};
+import { useGetWorkspacesQuery } from "@/hooks/use-workspace";
 
 const DashboardLayout = () => {
     const { isAuthenticated, isLoading } = useAuth();
     const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
     const [isCurrentWorkspace, setIsCurrentWorkspace] = useState<Workspace | null>(null);
     const location = useLocation();
+    
+    // Only fetch workspaces when authenticated
+    const { data: workspaceData } = useGetWorkspacesQuery() as { data: Workspace[] | undefined };
 
     // Reset workspace selection when navigating to dashboard or workspace list
     useEffect(() => {
@@ -41,8 +35,8 @@ const DashboardLayout = () => {
 
     const handleWorkspaceSelected = (workspace: Workspace) => {
         setIsCurrentWorkspace(workspace);
-    } 
-
+    };
+    
     return (
       <div className="flex h-screen w-full">
         <SidebarComponent currentWorkspace={isCurrentWorkspace} />
@@ -52,6 +46,7 @@ const DashboardLayout = () => {
             onWorkspaceSelected={handleWorkspaceSelected}
             selectedWorkspace={isCurrentWorkspace}
             onCreateWorkspace={() => setIsCreatingWorkspace(true)}
+            workspaceData={workspaceData}
           />
           
           <main className="flex-1 overflow-y-auto h-full w-full">

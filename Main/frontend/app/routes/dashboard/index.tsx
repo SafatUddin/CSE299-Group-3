@@ -3,7 +3,7 @@ import { StatsCard } from "@/components/dashboard/stat-card";
 import { StatisticsCharts } from "@/components/dashboard/statistics-charts";
 import { Loader } from "@/components/loader";
 import { UpcomingTasks } from "@/components/upcoming-tasks";
-import { useGetWorkspaceStatsQuery } from "@/hooks/use-workspace";
+import { useGetOverallStatsQuery } from "@/hooks/use-workspace";
 import type {
   Project,
   ProjectStatusData,
@@ -15,10 +15,7 @@ import type {
 } from "@/types";
 
 const Dashboard = () => {
-  // Always show stats for all workspaces in dashboard
-  const workspaceId = "all";
-
-  const { data, isPending } = useGetWorkspaceStatsQuery(workspaceId) as {
+  const { data, isPending } = useGetOverallStatsQuery() as {
     data: {
       stats: StatsCardProps;
       taskTrendsData: TaskTrendsData[];
@@ -35,6 +32,15 @@ const Dashboard = () => {
     return (
       <div>
         <Loader />
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full">
+        <h2 className="text-xl font-semibold mb-2">No Data Available</h2>
+        <p className="text-muted-foreground">Unable to load dashboard statistics</p>
       </div>
     );
   }

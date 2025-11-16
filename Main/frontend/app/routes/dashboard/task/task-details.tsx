@@ -8,6 +8,7 @@ import { TaskDescription } from "@/components/task/task-description";
 import { TaskPrioritySelector } from "@/components/task/task-priority-selector";
 import { TaskStatusSelector } from "@/components/task/task-status-selector";
 import { TaskTitle } from "@/components/task/task-title";
+import { TaskAttachments } from "@/components/task/task-attachments";
 import { Watchers } from "@/components/task/watchers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
+import { useEffect, useRef } from "react";
 
 const TaskDetails = () => {
   const { user } = useAuth();
@@ -31,14 +33,27 @@ const TaskDetails = () => {
     workspaceId: string;
   }>();
   const navigate = useNavigate();
+  const hasRedirected = useRef(false);
 
-  const { data, isLoading } = useTaskByIdQuery(taskId!) as {
+  const { data, isLoading, error } = useTaskByIdQuery(taskId!) as {
     data: {
       task: Task;
       project: Project;
     };
     isLoading: boolean;
+    error: any;
   };
+
+  // Handle 403 error - show toast notification
+  useEffect(() => {
+    if (error?.response?.status === 403 && !hasRedirected.current) {
+      hasRedirected.current = true;
+      toast.error("You are not assigned to this task");
+      // Go back instead of navigating to avoid duplicate history entries
+      window.history.back();
+    }
+  }, [error]);
+
   const { mutate: watchTask, isPending: isWatching } = useWatchTaskMutation();
   const { mutate: achievedTask, isPending: isAchieved } =
     useAchievedTaskMutation();
@@ -51,12 +66,17 @@ const TaskDetails = () => {
     );
   }
 
-  if (!data) {
+  // Don't show "Task not found" for 403 errors, redirect will happen
+  if (!data && !error) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-2xl font-bold">Task not found</div>
       </div>
     );
+  }
+
+  if (!data) {
+    return <Loader />;
   }
 
   const { task, project } = data;
@@ -147,8 +167,8 @@ const TaskDetails = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <div className="bg-card rounded-lg p-6 shadow-sm mb-6">
-            <div className="flex flex-col md:flex-row justify-between items-start mb-4">
-              <div>
+            <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
+              <div className="flex-1 min-w-0">
                 <Badge
                   variant={
                     task.priority === "High"
@@ -172,14 +192,14 @@ const TaskDetails = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 mt-4 md:mt-0">
+              <div className="flex items-center gap-2 flex-shrink-0 w-full md:w-auto">
                 <TaskStatusSelector status={task.status} taskId={task._id} />
 
                 <Button
                   variant={"destructive"}
                   size="sm"
                   onClick={() => {}}
-                  className="hidden md:block"
+                  className="hidden md:block whitespace-nowrap"
                 >
                   Delete Task
                 </Button>
@@ -205,9 +225,14 @@ const TaskDetails = () => {
 
             <TaskPrioritySelector priority={task.priority} taskId={task._id} />
 
+          </div>
+          <div>
+            <TaskAttachments 
+              attachments={task.attachments || []} 
+              taskId={task._id} 
+            />
             <SubTasksDetails subTasks={task.subtasks || []} taskId={task._id} />
           </div>
-
           <CommentSection taskId={task._id} members={project.members as any} />
         </div>
 

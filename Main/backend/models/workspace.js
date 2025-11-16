@@ -27,5 +27,9 @@ const workspaceModel = new Schema({
   projects: [{ type: Schema.Types.ObjectId, ref: "Project" }],
 });
 
+// Add indexes for frequently queried fields
+workspaceModel.index({ "members.user": 1 });
+workspaceModel.index({ owner: 1 });
+
 const Workspace = model("Workspace", workspaceModel);
 export default Workspace;

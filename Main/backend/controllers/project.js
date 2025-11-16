@@ -87,7 +87,10 @@ const getProjectDetails = async (req, res) => {
 const getProjectTasks = async (req, res) => {
   try {
     const { projectId } = req.params;
-    const project = await Project.findById(projectId).populate("members.user");
+    const project = await Project.findById(projectId)
+      .select("title description status startDate dueDate progress tags members createdBy createdAt updatedAt")
+      .populate("members.user", "name email")
+      .lean();
 
     if (!project) {
       return res.status(404).json({
@@ -109,8 +112,10 @@ const getProjectTasks = async (req, res) => {
       project: projectId,
       isArchived: false,
     })
-      .populate("assignees", "name profilePicture")
-      .sort({ createdAt: -1 });
+      .select("title description status priority assignees dueDate createdAt updatedAt")
+      .populate("assignees", "name email")
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       project,
@@ -124,4 +129,48 @@ const getProjectTasks = async (req, res) => {
   }
 };
 
-export { createProject, getProjectDetails, getProjectTasks };
+const updateProject = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { title, description, status, startDate, dueDate, tags, members } = req.body;
+
+    const project = await Project.findById(projectId);
+
+    if (!project) {
+      return res.status(404).json({
+        message: "Project not found",
+      });
+    }
+
+    const isMember = project.members.some(
+      (member) => member.user.toString() === req.user._id.toString()
+    );
+
+    if (!isMember) {
+      return res.status(403).json({
+        message: "You are not a member of this project",
+      });
+    }
+
+    const tagArray = tags ? tags.split(",") : project.tags;
+
+    project.title = title || project.title;
+    project.description = description !== undefined ? description : project.description;
+    project.status = status || project.status;
+    project.startDate = startDate || project.startDate;
+    project.dueDate = dueDate || project.dueDate;
+    project.tags = tagArray;
+    project.members = members || project.members;
+
+    await project.save();
+
+    res.status(200).json(project);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+export { createProject, getProjectDetails, getProjectTasks, updateProject };

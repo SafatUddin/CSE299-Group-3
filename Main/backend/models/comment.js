@@ -55,6 +55,10 @@ const commentSchema = new Schema(
   { timestamps: true }
 );
 
+// Add indexes for frequently queried fields
+commentSchema.index({ task: 1, createdAt: -1 });
+commentSchema.index({ author: 1 });
+
 const Comment = mongoose.model("Comment", commentSchema);
 
 export default Comment;

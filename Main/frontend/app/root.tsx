@@ -10,6 +10,7 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import ReactQueryProvider from "./provider/react-query-provider";
+import { Toaster } from "sonner";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -46,6 +47,7 @@ export default function App() {
   return (
     <ReactQueryProvider>
       <Outlet />
+      <Toaster position="top-center" richColors />
     </ReactQueryProvider>
   );
 }

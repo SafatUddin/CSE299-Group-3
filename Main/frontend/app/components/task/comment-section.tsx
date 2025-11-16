@@ -28,6 +28,9 @@ export const CommentSection = ({
     isLoading: boolean;
   };
 
+  // Debug: Log comments to see structure
+  console.log("Comments data:", comments);
+
   const handleAddComment = () => {
     if (!newComment.trim()) return;
 
@@ -61,10 +64,9 @@ export const CommentSection = ({
         {comments?.length > 0 ? (
           comments.map((comment) => (
             <div key={comment._id} className="flex gap-4 py-2">
-              <Avatar className="size-8">
-                <AvatarImage src={comment.author.profilePicture} />
-                <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
-              </Avatar>
+              <div className="size-8 rounded-full bg-gray-700 flex items-center justify-center text-white font-semibold text-sm">
+                {comment.author.name.charAt(0).toUpperCase()}
+              </div>
 
               <div className="flex-1">
                 <div className="flex justify-between items-center mb-1">
@@ -79,7 +81,7 @@ export const CommentSection = ({
                   </span>
                 </div>
 
-                <p className="text-sm text-muted-foreground">{comment.text}</p>
+                <p className="text-sm text-muted-foreground">{comment.content}</p>
               </div>
             </div>
           ))

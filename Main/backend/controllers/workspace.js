@@ -1,5 +1,11 @@
 import Workspace from "../models/workspace.js";
 import Project from "../models/project.js";
+import Task from "../models/task.js";
+import User from "../models/user.js";
+import WorkspaceInvite from "../models/workspace-invite.js";
+import jwt from "jsonwebtoken";
+import { sendEmail } from "../libs/send-email.js";
+import { recordActivity } from "../libs/index.js";
 
 const createWorkspace = async (req, res) => {
   try {
@@ -30,10 +36,16 @@ const createWorkspace = async (req, res) => {
 
 const getWorkspaces = async (req, res) => {
   try {
+    const startTime = Date.now();
     const workspace = await Workspace.find({
       "members.user": req.user._id,
-    }).sort({ createdAt: -1 });
+    })
+    .select("name description color members")
+    .limit(50)
+    .sort({ createdAt: -1 })
+    .lean();
 
+    console.log(`[PERF] getWorkspaces: ${Date.now() - startTime}ms`);
     res.status(200).json(workspace);
   } catch (error) {
     console.log(error);
@@ -47,10 +59,10 @@ const getWorkspaceDetails = async (req, res) => {
   try {
     const { workspaceId } = req.params;
 
-    const workspace = await Workspace.findOne({
-       _id: workspaceId,
-        "members.user": req.user._id, 
-      }).populate( "members.user", "name email profilePicture");
+    const workspace = await Workspace.findById(workspaceId)
+      .select("name description color owner members")
+      .populate("members.user", "name email")
+      .lean();
 
     if (!workspace) {
       return res.status(404).json({
@@ -60,6 +72,162 @@ const getWorkspaceDetails = async (req, res) => {
 
     res.status(200).json(workspace);
   } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+const updateWorkspace = async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    const { name, description, color, members } = req.body;
+
+    const workspace = await Workspace.findById(workspaceId);
+
+    if (!workspace) {
+      return res.status(404).json({
+        message: "Workspace not found",
+      });
+    }
+
+    // Check if user is owner or admin
+    const userMember = workspace.members.find(
+      (member) => member.user.toString() === req.user._id.toString()
+    );
+
+    if (!userMember || (userMember.role !== "owner" && userMember.role !== "admin")) {
+      return res.status(403).json({
+        message: "You don't have permission to update this workspace",
+      });
+    }
+
+    // Update workspace fields
+    workspace.name = name || workspace.name;
+    workspace.description = description !== undefined ? description : workspace.description;
+    workspace.color = color || workspace.color;
+    
+    // Update members if provided (only if user is owner)
+    if (members && userMember.role === "owner") {
+      workspace.members = members;
+    }
+
+    await workspace.save();
+
+    const updatedWorkspace = await Workspace.findById(workspaceId)
+      .populate("members.user", "name email profilePicture");
+
+    res.status(200).json(updatedWorkspace);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+const deleteWorkspace = async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+
+    const workspace = await Workspace.findById(workspaceId);
+
+    if (!workspace) {
+      return res.status(404).json({
+        message: "Workspace not found",
+      });
+    }
+
+    // Check if user is the owner
+    const userMember = workspace.members.find(
+      (member) => member.user.toString() === req.user._id.toString()
+    );
+
+    if (!userMember || userMember.role !== "owner") {
+      return res.status(403).json({
+        message: "Only workspace owner can delete the workspace",
+      });
+    }
+
+    // Delete all projects and tasks in the workspace
+    await Project.deleteMany({ workspace: workspaceId });
+
+    // Delete workspace invites
+    await WorkspaceInvite.deleteMany({ workspaceId });
+
+    // Delete the workspace
+    await Workspace.deleteOne({ _id: workspaceId });
+
+    res.status(200).json({
+      message: "Workspace deleted successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+const transferOwnership = async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    const { newOwnerId } = req.body;
+
+    const workspace = await Workspace.findById(workspaceId);
+
+    if (!workspace) {
+      return res.status(404).json({
+        message: "Workspace not found",
+      });
+    }
+
+    // Check if user is the owner
+    const currentOwner = workspace.members.find(
+      (member) => member.user.toString() === req.user._id.toString()
+    );
+
+    if (!currentOwner || currentOwner.role !== "owner") {
+      return res.status(403).json({
+        message: "Only workspace owner can transfer ownership",
+      });
+    }
+
+    // Check if new owner is a member
+    const newOwnerMember = workspace.members.find(
+      (member) => member.user.toString() === newOwnerId
+    );
+
+    if (!newOwnerMember) {
+      return res.status(400).json({
+        message: "New owner must be a member of the workspace",
+      });
+    }
+
+    // Update roles
+    workspace.members = workspace.members.map((member) => {
+      if (member.user.toString() === req.user._id.toString()) {
+        return { ...member, role: "admin" };
+      }
+      if (member.user.toString() === newOwnerId) {
+        return { ...member, role: "owner" };
+      }
+      return member;
+    });
+
+    workspace.owner = newOwnerId;
+    await workspace.save();
+
+    const updatedWorkspace = await Workspace.findById(workspaceId)
+      .populate("members.user", "name email profilePicture");
+
+    res.status(200).json(updatedWorkspace);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
   }
 };
 
@@ -69,7 +237,9 @@ const getWorkspaceProjects = async (req, res) => {
     const workspace = await Workspace.findOne({
       _id: workspaceId,
       "members.user": req.user._id,
-    }).populate("members.user", "name email profilePicture");
+    })
+    .populate("members.user", "name email")
+    .lean();
 
     if (!workspace) {
       return res.status(404).json({
@@ -80,10 +250,12 @@ const getWorkspaceProjects = async (req, res) => {
     const projects = await Project.find({
       workspace: workspaceId,
       isArchived: false,
-      // members: { $in: [req.user._id] },
+      "members.user": req.user._id,
     })
-      // .populate("tasks", "status")
-      .sort({ createdAt: -1 });
+      .select("title description status startDate dueDate progress tags createdBy createdAt updatedAt")
+      .populate("tasks", "status")
+      .sort({ createdAt: -1 })
+      .lean();
     
     res.status(200).json({
       workspace,
@@ -98,265 +270,19 @@ const getWorkspaceProjects = async (req, res) => {
   }
 };
 
-const getWorkspaceStats = async (req, res) => {
-  try {
-    const { workspaceId } = req.params;
-    const userId = req.user._id;
-
-    let workspaceFilter;
-    
-    // If workspaceId is 'all' or not provided, get stats for all user's workspaces
-    if (!workspaceId || workspaceId === 'all') {
-      const userWorkspaces = await Workspace.find({
-        "members.user": userId,
-      });
-      
-      if (!userWorkspaces || userWorkspaces.length === 0) {
-        return res.json({
-          stats: {
-            totalProjects: 0,
-            totalTasks: 0,
-            totalTaskCompleted: 0,
-            totalTaskInProgress: 0,
-            totalTaskToDo: 0,
-            totalProjectInProgress: 0,
-          },
-          taskTrendsData: [],
-          projectStatusData: [],
-          taskPriorityData: [],
-          workspaceProductivityData: [],
-          upcomingTasks: [],
-          recentProjects: [],
-        });
-      }
-      
-      workspaceFilter = { $in: userWorkspaces.map(ws => ws._id) };
-    } else {
-      // Get specific workspace stats
-      const workspace = await Workspace.findById(workspaceId);
-
-      if (!workspace) {
-        return res.status(404).json({
-          message: "Workspace not found",
-        });
-      }
-
-      const isMember = workspace.members.some(
-        (member) => member.user.toString() === userId.toString()
-      );
-
-      if (!isMember) {
-        return res.status(403).json({
-          message: "You are not a member of this workspace",
-        });
-      }
-      
-      workspaceFilter = workspaceId;
-    }
-
-    const [totalProjects, projects] = await Promise.all([
-      Project.countDocuments({ workspace: workspaceFilter }),
-      Project.find({ workspace: workspaceFilter })
-        .populate(
-          "tasks",
-          "title status dueDate project updatedAt isArchived priority"
-        )
-        .sort({ createdAt: -1 }),
-    ]);
-
-    const totalTasks = projects.reduce((acc, project) => {
-      return acc + project.tasks.length;
-    }, 0);
-
-    const totalProjectInProgress = projects.filter(
-      (project) => project.status === "In Progress"
-    ).length;
-    // const totalProjectCompleted = projects.filter(
-    //   (project) => project.status === "Completed"
-    // ).length;
-
-    const totalTaskCompleted = projects.reduce((acc, project) => {
-      return (
-        acc + project.tasks.filter((task) => task.status === "Done").length
-      );
-    }, 0);
-
-    const totalTaskToDo = projects.reduce((acc, project) => {
-      return (
-        acc + project.tasks.filter((task) => task.status === "To Do").length
-      );
-    }, 0);
-
-    const totalTaskInProgress = projects.reduce((acc, project) => {
-      return (
-        acc +
-        project.tasks.filter((task) => task.status === "In Progress").length
-      );
-    }, 0);
-
-    const tasks = projects.flatMap((project) => project.tasks);
-
-    // get upcoming task in next 7 days
-
-    const upcomingTasks = tasks.filter((task) => {
-      const taskDate = new Date(task.dueDate);
-      const today = new Date();
-      return (
-        taskDate > today &&
-        taskDate <= new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-      );
-    });
-
-    const taskTrendsData = [
-      { name: "Sun", completed: 0, inProgress: 0, toDo: 0 },
-      { name: "Mon", completed: 0, inProgress: 0, toDo: 0 },
-      { name: "Tue", completed: 0, inProgress: 0, toDo: 0 },
-      { name: "Wed", completed: 0, inProgress: 0, toDo: 0 },
-      { name: "Thu", completed: 0, inProgress: 0, toDo: 0 },
-      { name: "Fri", completed: 0, inProgress: 0, toDo: 0 },
-      { name: "Sat", completed: 0, inProgress: 0, toDo: 0 },
-    ];
-
-    // get last 7 days tasks date
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      return date;
-    }).reverse();
-
-    // populate
-
-    for (const project of projects) {
-      for (const task in project.tasks) {
-        const taskDate = new Date(task.updatedAt);
-
-        const dayInDate = last7Days.findIndex(
-          (date) =>
-            date.getDate() === taskDate.getDate() &&
-            date.getMonth() === taskDate.getMonth() &&
-            date.getFullYear() === taskDate.getFullYear()
-        );
-
-        if (dayInDate !== -1) {
-          const dayName = last7Days[dayInDate].toLocaleDateString("en-US", {
-            weekday: "short",
-          });
-
-          const dayData = taskTrendsData.find((day) => day.name === dayName);
-
-          if (dayData) {
-            switch (task.status) {
-              case "Done":
-                dayData.completed++;
-                break;
-              case "In Progress":
-                dayData.inProgress++;
-                break;
-              case "To Do":
-                dayData.toDo++;
-                break;
-            }
-          }
-        }
-      }
-    }
-
-    // get project status distribution
-    const projectStatusData = [
-      { name: "Completed", value: 0, color: "#10b981" },
-      { name: "In Progress", value: 0, color: "#3b82f6" },
-      { name: "Planning", value: 0, color: "#f59e0b" },
-    ];
-
-    for (const project of projects) {
-      switch (project.status) {
-        case "Completed":
-          projectStatusData[0].value++;
-          break;
-        case "In Progress":
-          projectStatusData[1].value++;
-          break;
-        case "Planning":
-          projectStatusData[2].value++;
-          break;
-      }
-    }
-
-    // Task priority distribution
-    const taskPriorityData = [
-      { name: "High", value: 0, color: "#ef4444" },
-      { name: "Medium", value: 0, color: "#f59e0b" },
-      { name: "Low", value: 0, color: "#6b7280" },
-    ];
-
-    for (const task of tasks) {
-      switch (task.priority) {
-        case "High":
-          taskPriorityData[0].value++;
-          break;
-        case "Medium":
-          taskPriorityData[1].value++;
-          break;
-        case "Low":
-          taskPriorityData[2].value++;
-          break;
-      }
-    }
-
-    const workspaceProductivityData = [];
-
-    for (const project of projects) {
-      const projectTask = tasks.filter(
-        (task) => task.project.toString() === project._id.toString()
-      );
-
-      const completedTask = projectTask.filter(
-        (task) => task.status === "Done" && task.isArchived === false
-      );
-
-      workspaceProductivityData.push({
-        name: project.title,
-        completed: completedTask.length,
-        total: projectTask.length,
-      });
-    }
-
-    const stats = {
-      totalProjects,
-      totalTasks,
-      totalProjectInProgress,
-      totalTaskCompleted,
-      totalTaskToDo,
-      totalTaskInProgress,
-    };
-
-    res.status(200).json({
-      stats,
-      taskTrendsData,
-      projectStatusData,
-      taskPriorityData,
-      workspaceProductivityData,
-      upcomingTasks,
-      recentProjects: projects.slice(0, 5),
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      message: "Internal server error",
-    });
-  }
-};
-
 const getOverallStats = async (req, res) => {
   try {
+    const startTime = Date.now();
     const userId = req.user._id;
 
-    // Get all workspaces where user is a member
-    const workspaces = await Workspace.find({
-      "members.user": userId,
-    });
+    // Get all workspace where user is a member - only fetch _id
+    const workspace = await Workspace.find(
+      { "members.user": userId },
+      { _id: 1, name: 1 }
+    );
+    console.log(`[PERF] Workspace query: ${Date.now() - startTime}ms`);
 
-    if (!workspaces || workspaces.length === 0) {
+    if (!workspace || workspace.length === 0) {
       return res.json({
         stats: {
           totalProjects: 0,
@@ -374,107 +300,101 @@ const getOverallStats = async (req, res) => {
       });
     }
 
-    const workspaceIds = workspaces.map((ws) => ws._id);
+    const workspaceIds = workspace.map((ws) => ws._id);
 
-    // Get all projects from all workspaces
-    const projects = await Project.find({ workspace: { $in: workspaceIds } })
-      .populate(
-        "tasks",
-        "title status dueDate project updatedAt isArchived priority"
-      )
-      .sort({ createdAt: -1 });
+    // Get all projects from all workspace - limit to recent 20 for performance
+    const projectStart = Date.now();
+    const projects = await Project.find({ 
+      workspace: { $in: workspaceIds },
+      "members.user": userId 
+    })
+      .select("title status workspace createdAt")
+      .limit(15)
+      .sort({ createdAt: -1 })
+      .lean();
+    console.log(`[PERF] Projects query: ${Date.now() - projectStart}ms`);
 
     const totalProjects = projects.length;
+    
+    // Get project IDs for task queries
+    const projectIds = projects.map(p => p._id);
 
-    const totalTasks = projects.reduce((acc, project) => {
-      return acc + project.tasks.length;
-    }, 0);
+    // Run task queries in parallel
+    const taskStart = Date.now();
+    const [tasks, upcomingTasks] = await Promise.all([
+      // Fetch tasks for the projects we retrieved
+      Task.find({
+        project: { $in: projectIds },
+        isArchived: false
+      })
+        .select("status dueDate project updatedAt priority")
+        .limit(150)
+        .lean(),
+      
+      // Get upcoming tasks for next 7 days
+      Task.find({
+        project: { $in: projectIds },
+        isArchived: false,
+        dueDate: {
+          $gte: new Date(),
+          $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        }
+      })
+        .lean()
+    ]);
+    console.log(`[PERF] Tasks query: ${Date.now() - taskStart}ms`);
+
+    const totalTasks = tasks.length;
 
     const totalProjectInProgress = projects.filter(
       (project) => project.status === "In Progress"
     ).length;
 
-    const totalTaskCompleted = projects.reduce((acc, project) => {
-      return (
-        acc + project.tasks.filter((task) => task.status === "Done").length
-      );
-    }, 0);
+    const totalTaskCompleted = tasks.filter((task) => task.status === "Done").length;
 
-    const totalTaskToDo = projects.reduce((acc, project) => {
-      return (
-        acc + project.tasks.filter((task) => task.status === "To Do").length
-      );
-    }, 0);
+    const totalTaskToDo = tasks.filter((task) => task.status === "To Do").length;
 
-    const totalTaskInProgress = projects.reduce((acc, project) => {
-      return (
-        acc +
-        project.tasks.filter((task) => task.status === "In Progress").length
-      );
-    }, 0);
+    const totalTaskInProgress = tasks.filter((task) => task.status === "In Progress").length;
 
-    const tasks = projects.flatMap((project) => project.tasks);
-
-    // Get upcoming tasks in next 7 days
-    const upcomingTasks = tasks.filter((task) => {
-      const taskDate = new Date(task.dueDate);
-      const today = new Date();
-      return (
-        taskDate > today &&
-        taskDate <= new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-      );
-    });
-
-    // Task trends for last 7 days
-    const taskTrendsData = [
-      { name: "Sun", completed: 0, inProgress: 0, toDo: 0 },
-      { name: "Mon", completed: 0, inProgress: 0, toDo: 0 },
-      { name: "Tue", completed: 0, inProgress: 0, toDo: 0 },
-      { name: "Wed", completed: 0, inProgress: 0, toDo: 0 },
-      { name: "Thu", completed: 0, inProgress: 0, toDo: 0 },
-      { name: "Fri", completed: 0, inProgress: 0, toDo: 0 },
-      { name: "Sat", completed: 0, inProgress: 0, toDo: 0 },
-    ];
-
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
+    // Simplified task trends - just use current counts instead of historical data
+    const taskTrendsData = Array.from({ length: 7 }, (_, i) => {
       const date = new Date();
-      date.setDate(date.getDate() - i);
-      return date;
-    }).reverse();
-
-    for (const project of projects) {
-      for (const task of project.tasks) {
-        const taskDate = new Date(task.updatedAt);
-        const dayInDate = last7Days.findIndex(
-          (date) =>
-            date.toDateString() === taskDate.toDateString()
-        );
-
-        if (dayInDate !== -1) {
-          if (task.status === "Done") {
-            taskTrendsData[dayInDate].completed++;
-          } else if (task.status === "In Progress") {
-            taskTrendsData[dayInDate].inProgress++;
-          } else if (task.status === "To Do") {
-            taskTrendsData[dayInDate].toDo++;
-          }
-        }
-      }
-    }
+      date.setDate(date.getDate() - (6 - i));
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      return {
+        name: dayNames[date.getDay()],
+        completed: i === 6 ? totalTaskCompleted : 0,
+        inProgress: i === 6 ? totalTaskInProgress : 0,
+        toDo: i === 6 ? totalTaskToDo : 0,
+      };
+    });
 
     // Project status data
     const projectStatusData = [
       {
-        name: "To Do",
-        value: projects.filter((p) => p.status === "To Do").length,
+        name: "Planning",
+        value: projects.filter((p) => p.status === "Planning").length,
+        color: "#f59e0b",
       },
       {
         name: "In Progress",
-        value: totalProjectInProgress,
+        value: projects.filter((p) => p.status === "In Progress").length,
+        color: "#3b82f6",
       },
       {
-        name: "Done",
-        value: projects.filter((p) => p.status === "Done").length,
+        name: "On Hold",
+        value: projects.filter((p) => p.status === "On Hold").length,
+        color: "#f97316",
+      },
+      {
+        name: "Completed",
+        value: projects.filter((p) => p.status === "Completed").length,
+        color: "#10b981",
+      },
+      {
+        name: "Cancelled",
+        value: projects.filter((p) => p.status === "Cancelled").length,
+        color: "#ef4444",
       },
     ];
 
@@ -483,23 +403,27 @@ const getOverallStats = async (req, res) => {
       {
         name: "Low",
         value: tasks.filter((t) => t.priority === "Low").length,
+        color: "#6b7280",
       },
       {
         name: "Medium",
         value: tasks.filter((t) => t.priority === "Medium").length,
+        color: "#f59e0b",
       },
       {
         name: "High",
         value: tasks.filter((t) => t.priority === "High").length,
+        color: "#ef4444",
       },
     ];
 
     // Workspace productivity data
-    const workspaceProductivityData = workspaces.map((ws) => {
+    const workspaceProductivityData = workspace.map((ws) => {
       const wsProjects = projects.filter(
         (p) => p.workspace.toString() === ws._id.toString()
       );
-      const wsTasks = wsProjects.flatMap((p) => p.tasks);
+      const wsProjectIds = wsProjects.map(p => p._id.toString());
+      const wsTasks = tasks.filter(t => wsProjectIds.includes(t.project.toString()));
       const completedTasks = wsTasks.filter((t) => t.status === "Done").length;
 
       return {
@@ -518,14 +442,242 @@ const getOverallStats = async (req, res) => {
       totalProjectInProgress,
     };
 
+    // Add task data to recent projects for frontend
+    const recentProjectsWithTasks = projects.slice(0, 5).map(project => {
+      const projectTasks = tasks.filter(t => t.project.toString() === project._id.toString());
+      return {
+        ...project,
+        tasks: projectTasks
+      };
+    });
+
     res.json({
       stats,
       taskTrendsData,
       projectStatusData,
       taskPriorityData,
       workspaceProductivityData,
-      upcomingTasks,
-      recentProjects: projects.slice(0, 5),
+      upcomingTasks: upcomingTasks.slice(0, 5),
+      recentProjects: recentProjectsWithTasks,
+    });
+    console.log(`[PERF] Total getOverallStats: ${Date.now() - startTime}ms`);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+const inviteUserToWorkspace = async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    const { email, role } = req.body;
+
+    const workspace = await Workspace.findById(workspaceId);
+
+    if (!workspace) {
+      return res.status(404).json({
+        message: "Workspace not found",
+      });
+    }
+
+    const userMemberInfo = workspace.members.find(
+      (member) => member.user.toString() === req.user._id.toString()
+    );
+
+    if (!userMemberInfo || !["admin", "owner"].includes(userMemberInfo.role)) {
+      return res.status(403).json({
+        message: "You are not authorized to invite members to this workspace",
+      });
+    }
+
+    const existingUser = await User.findOne({ email });
+
+    if (!existingUser) {
+      return res.status(400).json({
+        message: "User not found",
+      });
+    }
+
+    const isMember = workspace.members.some(
+      (member) => member.user.toString() === existingUser._id.toString()
+    );
+
+    if (isMember) {
+      return res.status(400).json({
+        message: "User already a member of this workspace",
+      });
+    }
+
+    const isInvited = await WorkspaceInvite.findOne({
+      user: existingUser._id,
+      workspaceId: workspaceId,
+    });
+
+    if (isInvited && isInvited.expiresAt > new Date()) {
+      return res.status(400).json({
+        message: "User already invited to this workspace",
+      });
+    }
+
+    if (isInvited && isInvited.expiresAt < new Date()) {
+      await WorkspaceInvite.deleteOne({ _id: isInvited._id });
+    }
+
+    const inviteToken = jwt.sign(
+      {
+        user: existingUser._id,
+        workspaceId: workspaceId,
+        role: role || "member",
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    await WorkspaceInvite.create({
+      user: existingUser._id,
+      workspaceId: workspaceId,
+      token: inviteToken,
+      role: role || "member",
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+
+    const invitationLink = `${process.env.FRONTEND_URL}/workspace-invite/${workspace._id}?tk=${inviteToken}`;
+
+    const emailContent = `
+      <p>You have been invited to join ${workspace.name} workspace</p>
+      <p>Click here to join: <a href="${invitationLink}">${invitationLink}</a></p>
+    `;
+
+    await sendEmail(
+      email,
+      "You have been invited to join a workspace",
+      emailContent
+    );
+
+    res.status(200).json({
+      message: "Invitation sent successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+const acceptGenerateInvite = async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+
+    const workspace = await Workspace.findById(workspaceId);
+
+    if (!workspace) {
+      return res.status(404).json({
+        message: "Workspace not found",
+      });
+    }
+
+    const isMember = workspace.members.some(
+      (member) => member.user.toString() === req.user._id.toString()
+    );
+
+    if (isMember) {
+      return res.status(400).json({
+        message: "You are already a member of this workspace",
+      });
+    }
+
+    workspace.members.push({
+      user: req.user._id,
+      role: "member",
+      joinedAt: new Date(),
+    });
+
+    await workspace.save();
+
+    await recordActivity(
+      req.user._id,
+      "joined_workspace",
+      "Workspace",
+      workspaceId,
+      {
+        description: `Joined ${workspace.name} workspace`,
+      }
+    );
+
+    res.status(200).json({
+      message: "Invitation accepted successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+const acceptInviteByToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const { user, workspaceId, role } = decoded;
+
+    const workspace = await Workspace.findById(workspaceId);
+
+    if (!workspace) {
+      return res.status(404).json({
+        message: "Workspace not found",
+      });
+    }
+
+    const isMember = workspace.members.some(
+      (member) => member.user.toString() === user.toString()
+    );
+
+    if (isMember) {
+      return res.status(400).json({
+        message: "User already a member of this workspace",
+      });
+    }
+
+    const inviteInfo = await WorkspaceInvite.findOne({
+      user: user,
+      workspaceId: workspaceId,
+    });
+
+    if (!inviteInfo) {
+      return res.status(404).json({
+        message: "Invitation not found",
+      });
+    }
+
+    if (inviteInfo.expiresAt < new Date()) {
+      return res.status(400).json({
+        message: "Invitation has expired",
+      });
+    }
+
+    workspace.members.push({
+      user: user,
+      role: role || "member",
+      joinedAt: new Date(),
+    });
+
+    await workspace.save();
+
+    await Promise.all([
+      WorkspaceInvite.deleteOne({ _id: inviteInfo._id }),
+      recordActivity(user, "joined_workspace", "Workspace", workspaceId, {
+        description: `Joined ${workspace.name} workspace`,
+      }),
+    ]);
+
+    res.status(200).json({
+      message: "Invitation accepted successfully",
     });
   } catch (error) {
     console.log(error);
@@ -538,8 +690,13 @@ const getOverallStats = async (req, res) => {
 export { 
   createWorkspace,
   getWorkspaces,
-  getWorkspaceDetails, 
+  getWorkspaceDetails,
+  updateWorkspace,
+  deleteWorkspace,
+  transferOwnership,
   getWorkspaceProjects, 
-  getWorkspaceStats,
-  getOverallStats
+  getOverallStats,
+  inviteUserToWorkspace,
+  acceptGenerateInvite,
+  acceptInviteByToken
 };

@@ -5,7 +5,6 @@ import { Edit } from "lucide-react";
 import { toast } from "sonner";
 import { useUpdateTaskTitleMutation } from "@/hooks/use-task";
 
-
 export const TaskTitle = ({
     title,
     taskId 

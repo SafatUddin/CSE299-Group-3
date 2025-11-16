@@ -42,6 +42,11 @@ const projectSchema = new Schema(
   { timestamps: true }
 );
 
+// Add indexes for frequently queried fields
+projectSchema.index({ workspace: 1, "members.user": 1 });
+projectSchema.index({ createdAt: -1 });
+projectSchema.index({ workspace: 1, isArchived: 1 });
+
 const Project = mongoose.model("Project", projectSchema);
 
 export default Project;

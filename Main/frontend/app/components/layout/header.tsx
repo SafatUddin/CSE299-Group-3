@@ -12,7 +12,7 @@ import {
   DropdownMenuGroup,
 } from "../ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
-import { Link, useLoaderData, useLocation, useNavigate, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { WorkspaceAvatar } from "../workspace/workspace-avatar";
 import { useEffect } from "react";
 
@@ -20,22 +20,31 @@ interface HeaderProps {
   onWorkspaceSelected: (workspace: Workspace) => void;
   selectedWorkspace: Workspace | null;
   onCreateWorkspace: () => void;
+  workspaceData: Workspace[] | undefined;
 }
 
 export const Header = ({
   onWorkspaceSelected,
   selectedWorkspace,
   onCreateWorkspace,
+  workspaceData,
 }: HeaderProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams();
 
   const { user, logout } = useAuth();
-  const { workspace } = useLoaderData() as { workspace: Workspace[] };
+  const workspace = workspaceData || [];
   
   // Extract workspaceId from URL if present
   const workspaceIdFromUrl = params.workspaceId || location.pathname.split('/')[2];
+  
+  // Reset workspace selection on archived and settings pages
+  useEffect(() => {
+    if (location.pathname === '/archived' || location.pathname === '/settings') {
+      onWorkspaceSelected(null as any);
+    }
+  }, [location.pathname, onWorkspaceSelected]);
   
   // Find workspace from URL if not already selected
   useEffect(() => {
@@ -79,17 +88,23 @@ export const Header = ({
             <DropdownMenuSeparator />
 
             <DropdownMenuGroup>
-              {workspace.map((ws) => (
-                <DropdownMenuItem
-                  key={ws._id}
-                  onClick={() => handleOnClick(ws)}
-                >
-                  {ws.color && (
-                    <WorkspaceAvatar color={ws.color} name={ws.name} />
-                  )}
-                  <span className="ml-2">{ws.name}</span>
+              {workspace && workspace.length > 0 ? (
+                workspace.map((ws) => (
+                  <DropdownMenuItem
+                    key={ws._id}
+                    onClick={() => handleOnClick(ws)}
+                  >
+                    {ws.color && (
+                      <WorkspaceAvatar color={ws.color} name={ws.name} />
+                    )}
+                    <span className="ml-2">{ws.name}</span>
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <DropdownMenuItem disabled>
+                  No workspace available
                 </DropdownMenuItem>
-              ))}
+              )}
             </DropdownMenuGroup>
 
             <DropdownMenuGroup>
@@ -110,8 +125,7 @@ export const Header = ({
             <DropdownMenuTrigger asChild>
               <button className="rounded-full border p-0 w-10 h-10 overflow-hidden">
                 <Avatar className="w-full h-full">
-                  <AvatarImage src={user?.profilePicture} alt={user?.name} />
-                  <AvatarFallback className="bg-gray-900 text-white dark:bg-gray-800">
+                  <AvatarFallback className="bg-gray-900 text-white dark:bg-gray-800 font-semibold">
                     {user?.name?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -121,8 +135,8 @@ export const Header = ({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Link to="/user/profile">Profile</Link>
+              <DropdownMenuItem asChild>
+                <Link to="/user/profile" className="cursor-pointer">Profile</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout}>Log Out</DropdownMenuItem>

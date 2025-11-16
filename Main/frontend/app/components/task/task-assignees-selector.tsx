@@ -1,6 +1,5 @@
 import type { ProjectMemberRole, Task, User } from "@/types";
 import { useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { useUpdateTaskAssigneesMutation } from "@/hooks/use-task";
@@ -81,10 +80,9 @@ export const TaskAssigneesSelector = ({
                 key={m.user._id}
                 className="flex items-center bg-gray-100 rounded px-2 py-1"
               >
-                <Avatar className="size-6 mr-1">
-                  <AvatarImage src={m.user.profilePicture} />
-                  <AvatarFallback>{m.user.name.charAt(0)}</AvatarFallback>
-                </Avatar>
+                <div className="size-6 mr-1 rounded-full bg-gray-700 flex items-center justify-center text-white font-semibold text-xs">
+                  {m.user.name.charAt(0).toUpperCase()}
+                </div>
                 <span className="text-xs text-muted-foreground">
                   {m.user.name}
                 </span>
@@ -132,10 +130,9 @@ export const TaskAssigneesSelector = ({
                   className="mr-2"
                 />
 
-                <Avatar className="size-6 mr-2">
-                  <AvatarImage src={m.user.profilePicture} />
-                  <AvatarFallback>{m.user.name.charAt(0)}</AvatarFallback>
-                </Avatar>
+                <div className="size-6 mr-2 rounded-full bg-gray-700 flex items-center justify-center text-white font-semibold text-xs">
+                  {m.user.name.charAt(0).toUpperCase()}
+                </div>
 
                 <span>{m.user.name}</span>
               </label>

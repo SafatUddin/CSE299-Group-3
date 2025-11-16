@@ -6,6 +6,9 @@ import { cn } from "@/lib/utils";
 import { Progress } from "../ui/progress";
 
 export const RecentProjects = ({ data }: { data: Project[] }) => {
+  // Safety check for undefined data
+  const projects = data || [];
+
   return (
     <Card className="lg:col-spa-2">
       <CardHeader>
@@ -13,13 +16,13 @@ export const RecentProjects = ({ data }: { data: Project[] }) => {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {data.length === 0 ? (
+        {projects.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">
             No Recent project yet
           </p>
         ) : (
-          data.map((project) => {
-            const projectProgress = getProjectProgress(project.tasks);
+          projects.map((project) => {
+            const projectProgress = getProjectProgress(project.tasks || []);
             const workspaceId = typeof project.workspace === 'string' 
               ? project.workspace 
               : project.workspace._id;

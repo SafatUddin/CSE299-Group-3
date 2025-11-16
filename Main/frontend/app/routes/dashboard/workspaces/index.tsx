@@ -13,17 +13,36 @@ import { format } from "date-fns";
 
 const Workspaces = () => {
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
-  const { data: workspace, isLoading } = useGetWorkspacesQuery() as {
+  const { data: workspace, isLoading, error } = useGetWorkspacesQuery() as {
     data: Workspace[] | undefined;
     isLoading: boolean;
+    error: Error | null;
   };
 
   if (isLoading) {
     return <Loader />;
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full">
+        <h2 className="text-xl font-semibold mb-2">Error Loading Workspaces</h2>
+        <p className="text-muted-foreground">{error.message || "Unable to load workspace"}</p>
+      </div>
+    );
+  }
+
   if (!workspace) {
-    return <div>No workspace found</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-full">
+        <h2 className="text-xl font-semibold mb-2">No Workspaces Found</h2>
+        <p className="text-muted-foreground mb-4">Create your first workspace to get started</p>
+        <Button onClick={() => setIsCreatingWorkspace(true)}>
+          <PlusCircle className="size-4 mr-2" />
+          Create Workspace
+        </Button>
+      </div>
+    );
   }
 
   return (

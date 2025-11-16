@@ -45,6 +45,10 @@ const activityLogSchema = new Schema(
   { timestamps: true }
 );
 
+// Add indexes for frequently queried fields
+activityLogSchema.index({ resourceId: 1, createdAt: -1 });
+activityLogSchema.index({ user: 1 });
+
 const ActivityLog = mongoose.model("ActivityLog", activityLogSchema);
 
 export default ActivityLog;
