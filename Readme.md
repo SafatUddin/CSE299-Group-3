@@ -275,3 +275,42 @@ Database models defined with Mongoose: User, Workspace, Project, Task, Comment, 
 
 *Done By Safat:*
 - Created React Query hooks (`use-task.ts`, `use-workspace.ts`) to handle fetching and updating data; relevant queries automatically refresh after mutations. 
+
+****
+
+## Update-5
+
+[Update-5 Video Demo]()
+
+[Update-5 Report]()
+
+****
+
+**Backend:**
+
+*Done By Safat:*
+- Implemented `“update-project”` to edit project details and add members within projects
+- Implemented `“upload-attachment”`, `“add-link”` & `“delete-attachments”` to add attachments, links and delete attachments in task details
+- Implemented `“update-workspace”` to edit workspace details, `“transfer-ownership”` to transfer ownership of workspace
+- Implemented `“delete-workspace”` to delete workspace
+- Implemented `“invite-user-to-workspace”` and `“accept-invite”` to add members to workspace
+- Implemented `“get-user-profile”`, `“update-user-profile”` & `“change-password”` in user-profile
+- Made changes to `“schema”` to invite members, add attachments and other functionalities for this week's update.
+
+Frontend:
+
+*Done By Zunayed:*
+- Implemented `"archived"` page to see the archived tasks
+- Implemented `"settings"` page to change user profile information and passwords
+- Re-designed `"subtask card"` in task details for improved UX/UI.
+
+*Done By Farhan:*
+- Implemented `"members"` page to display all members of a workspace, with both list and board view options.
+- Developed the `"profile"` page for viewing and editing user details.
+- Implemented `"edit workspace"` interface to edit workspace details.
+- Implemented `"edit project"` interface to edit project details.
+- Added `"add attachments"` functionality for attaching files to tasks in the task details view.
+
+*Done By Safat:*
+- Created an `“invite members”` interface to invite members into workspace.
+- Implemented `"React Query hooks"` to handle fetching and updating data; relevant queries automatically refresh after mutations. 
