@@ -9,6 +9,7 @@ import { TaskPrioritySelector } from "@/components/task/task-priority-selector";
 import { TaskStatusSelector } from "@/components/task/task-status-selector";
 import { TaskTitle } from "@/components/task/task-title";
 import { TaskAttachments } from "@/components/task/task-attachments";
+import { TaskDueDateSelector } from "@/components/task/task-due-date-selector";
 import { Watchers } from "@/components/task/watchers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -167,42 +168,27 @@ const TaskDetails = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <div className="bg-card rounded-lg p-6 shadow-sm mb-6">
-            <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
-              <div className="flex-1 min-w-0">
-                <Badge
-                  variant={
-                    task.priority === "High"
-                      ? "destructive"
-                      : task.priority === "Medium"
-                      ? "default"
-                      : "outline"
-                  }
-                  className="mb-2 capitalize"
-                >
-                  {task.priority} Priority
-                </Badge>
+            <div className="flex-1 min-w-0 w-full">
+              <Badge
+                variant={
+                  task.priority === "High"
+                    ? "destructive"
+                    : task.priority === "Medium"
+                    ? "default"
+                    : "outline"
+                }
+                className="mb-2 capitalize"
+              >
+                {task.priority} Priority
+              </Badge>
 
                 <TaskTitle title={task.title} taskId={task._id} />
 
-                <div className="text-sm md:text-base text-muted-foreground">
-                  Created at:{" "}
-                  {formatDistanceToNow(new Date(task.createdAt), {
-                    addSuffix: true,
-                  })}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 flex-shrink-0 w-full md:w-auto">
-                <TaskStatusSelector status={task.status} taskId={task._id} />
-
-                <Button
-                  variant={"destructive"}
-                  size="sm"
-                  onClick={() => {}}
-                  className="hidden md:block whitespace-nowrap"
-                >
-                  Delete Task
-                </Button>
+              <div className="text-sm md:text-base text-muted-foreground mb-2">
+                Created at:{" "}
+                {formatDistanceToNow(new Date(task.createdAt), {
+                  addSuffix: true,
+                })}
               </div>
             </div>
 
@@ -217,13 +203,30 @@ const TaskDetails = () => {
               />
             </div>
 
-            <TaskAssigneesSelector
-              task={task}
-              assignees={task.assignees}
-              projectMembers={project.members as any}
-            />
+            <div className="flex items-center gap-2 mb-6">
+              <TaskStatusSelector status={task.status} taskId={task._id} />
 
-            <TaskPrioritySelector priority={task.priority} taskId={task._id} />
+              <Button
+                variant={"destructive"}
+                size="sm"
+                onClick={() => {}}
+                className="whitespace-nowrap"
+              >
+                Delete Task
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <TaskAssigneesSelector
+                task={task}
+                assignees={task.assignees}
+                projectMembers={project.members as any}
+              />
+
+              <TaskPrioritySelector priority={task.priority} taskId={task._id} />
+
+              <TaskDueDateSelector dueDate={task.dueDate} taskId={task._id} />
+            </div>
 
           </div>
           <div>

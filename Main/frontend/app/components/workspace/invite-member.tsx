@@ -4,6 +4,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Check, Copy } from "lucide-react";
 import { Label } from "../ui/label";
+import { toast } from "sonner";
 
 interface InviteMemberDialogProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export const InviteMemberDialog = ({
       `${window.location.origin}/workspace-invite/${workspaceId}`
     );
     setLinkCopied(true);
+    toast.success("Invite link copied to clipboard");
 
     setTimeout(() => {
       setLinkCopied(false);

@@ -242,7 +242,12 @@ export const EditProject = ({
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={member.profilePicture} />
+                        {member.profilePicture && (
+                          <AvatarImage 
+                            src={`${import.meta.env.VITE_API_URL.replace('/api-v1', '')}${member.profilePicture}`}
+                            alt={member.name}
+                          />
+                        )}
                         <AvatarFallback>
                           {member.name.charAt(0).toUpperCase()}
                         </AvatarFallback>

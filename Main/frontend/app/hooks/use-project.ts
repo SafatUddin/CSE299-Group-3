@@ -26,6 +26,8 @@ export const UseProjectQuery = (projectId: string) => {
   return useQuery({
     queryKey: ["project", projectId],
     queryFn: () => fetchData(`/projects/${projectId}/tasks`),
+    refetchInterval: 3000, // Refetch every 3 seconds for real-time task updates across users
+    refetchIntervalInBackground: true, // Continue refetching even when window is not focused
   });
 };
 

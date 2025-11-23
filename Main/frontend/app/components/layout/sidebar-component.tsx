@@ -8,9 +8,9 @@ import {
   LayoutDashboard,
   ListCheck,
   LogOut,
+  NotebookPen,
   Settings,
   Users,
-  Wrench,
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
@@ -70,14 +70,14 @@ export const SidebarComponent = ({
         <Link to="/dashboard" className="flex items-center">
           {!isCollapsed && (
             <div className="flex items-center gap-2">
-              <Wrench className="size-6 text-blue-600" />
+              <NotebookPen className="size-6 text-blue-600" />
               <span className="font-semibold text-lg hidden md:block">
-                Project Flow
+                ProjectFlow
               </span>
             </div>
           )}
 
-          {isCollapsed && <Wrench className="size-6 text-blue-600" />}
+          {isCollapsed && <NotebookPen className="size-6 text-blue-600" />}
         </Link>
 
         <Button

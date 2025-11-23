@@ -19,8 +19,8 @@ export const useGetOverallStatsQuery = () => {
   return useQuery({
     queryKey: ["workspace", "overall-stats"],
     queryFn: async () => fetchData(`/workspace/overall-stats`),
-    staleTime: 5 * 60 * 1000, // 5 minutes - dashboard data doesn't change that often
-    gcTime: 15 * 60 * 1000, // Keep in cache for 15 minutes
+    refetchInterval: 1000, // Refetch every 1 seconds for real-time dashboard updates
+    staleTime: 500, // Consider data stale after 0.5 seconds
   });
 };
 
@@ -28,6 +28,7 @@ export const useGetWorkspaceById = (workspaceId: string) => {
   return useQuery({
     queryKey: ["workspace", workspaceId],
     queryFn: async () => fetchData(`/workspace/${workspaceId}/projects`),
+    refetchInterval: 3000, // Refetch every 3 seconds for real-time project updates
   });
 };
 
@@ -36,13 +37,6 @@ export const useGetWorkspaceDetailsQuery = (workspaceId: string) => {
     queryKey: ["workspace", workspaceId, "details"],
     queryFn: async () => fetchData(`/workspace/${workspaceId}`),
     enabled: !!workspaceId,
-  });
-};
-
-export const useInviteMemberMutation = () => {
-  return useMutation({
-    mutationFn: (data: { email: string; role: string; workspaceId: string }) =>
-      postData(`/workspace/${data.workspaceId}/invite-member`, data),
   });
 };
 

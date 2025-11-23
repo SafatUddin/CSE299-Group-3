@@ -1,8 +1,6 @@
 import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import Verification from "../models/verification.js";
-import {sendEmail} from "../libs/send-email.js";
 import aj from "../libs/arcjet.js";
 
 const registerUser = async (req, res) => {
@@ -34,36 +32,24 @@ const registerUser = async (req, res) => {
             email,
             password: hashedPassword,
             name,
+            isEmailVerified: true,
         });
 
-        // Send verification email
-        const verificationToken = jwt.sign(
-            { userId: newUser._id, purpose: "email-verification" },
+        // Generate login token immediately
+        const token = jwt.sign(
+            { userId: newUser._id, purpose: "login" },
             process.env.JWT_SECRET,
-            { expiresIn: "1h" }
+            { expiresIn: "7d" }
         );
 
-        await Verification.create({
-            userId: newUser._id,
-            token: verificationToken,
-            expiresAt: new Date(Date.now() + 1 * 60 * 60 * 1000),
-        });
-
-        // send email
-        const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
-        const emailBody = `<p>Click <a href="${verificationLink}">here</a> to verify your email</p>`;
-        const emailSubject = "Verify your email";
-
-        const isEmailSent = await sendEmail(email, emailSubject, emailBody);
-
-        if (!isEmailSent) {
-            return res.status(500).json({
-                message: "Failed to send verification email",
-            });
-        }
+        // Return user data without password
+        const userData = newUser.toObject();
+        delete userData.password;
 
         res.status(201).json({
-             message: "Verification email sent. Please verify your email to complete registration.", 
+            message: "Registration successful",
+            token,
+            user: userData,
         });
 
     } catch (error) {
@@ -91,54 +77,6 @@ const loginUser = async (req, res) => {
         
         if (!isPasswordValid) {
             return res.status(400).json({ message: "Invalid email or password" });
-        }
-
-        // Check if email is verified
-        if (!user.isEmailVerified) {
-            const existingVerification = await Verification.findOne({
-                userId: user._id, 
-            });
-
-            if (existingVerification && existingVerification.expiresAt > new Date()) {
-                return res.status(400).json({
-                     message:
-                      "Email not verified. Please check your email for the verification link." 
-                });
-            } else {
-                // Delete expired verification and create new one
-                if (existingVerification) {
-                    await Verification.findByIdAndDelete(existingVerification._id);
-                }
-
-                const verificationToken = jwt.sign(
-                    { userId: user._id, purpose: "email-verification" },
-                    process.env.JWT_SECRET,
-                    { expiresIn: "1h" }
-                );
-                 
-                await Verification.create({
-                    userId: user._id,
-                    token: verificationToken,
-                    expiresAt: new Date(Date.now() + 1 * 60 * 60 * 1000),
-                });
-
-                // send email
-                const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
-                const emailBody = `<p>Click <a href="${verificationLink}">here</a> to verify your email</p>`;
-                const emailSubject = "Verify your email";
-
-                const isEmailSent = await sendEmail(email, emailSubject, emailBody);
-
-                if (!isEmailSent) {
-                    return res.status(500).json({
-                        message: "Failed to send verification email",
-                    });
-                }
-
-                return res.status(201).json({
-                    message: "Verification email sent. Please verify your email to complete registration.", 
-                });
-            }
         }
 
         // Generate login token
@@ -220,102 +158,14 @@ const verifyEmail = async (req, res) => {
     }
 }
 
-const resetPasswordRequest = async (req, res) => {
+const resetPassword = async (req, res) => {
     try {
-        const { email } = req.body;
+        const { email, newPassword, confirmPassword } = req.body;
 
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).select("+password");
 
         if (!user) {
             return res.status(400).json({ message: "Email not found." });
-        }
-
-        if (!user.isEmailVerified) {
-            return res.status(400).json({ message: "Please verify your email first." });
-        }
-
-        const existingVerification = await Verification.findOne({ 
-            userId: user._id,
-        });
-
-        if (existingVerification && existingVerification.expiresAt > new Date()) {
-            return res.status(400).json({
-                 message: "Reset password request already sent." 
-            });
-        } 
-        
-        if (existingVerification && existingVerification.expiresAt <= new Date()) {
-            await Verification.findByIdAndDelete(existingVerification._id);
-        }
-
-        const resetPasswordToken = jwt.sign(
-            { userId: user._id, purpose: "reset-password" },
-            process.env.JWT_SECRET,
-            { expiresIn: "1h" }
-        );
-
-        await Verification.create({
-            userId: user._id,
-            token: resetPasswordToken,
-            expiresAt: new Date(Date.now() + 1 * 60 * 60 * 1000),
-        });
-        
-        // send email
-        const resetPasswordLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetPasswordToken}`;
-        const emailBody = `<p>Click <a href="${resetPasswordLink}">here</a> to reset your password</p>`;
-        const emailSubject = "Reset your password";
-        const isEmailSent = await sendEmail(email, emailSubject, emailBody);
-
-        if (!isEmailSent) {
-            return res.status(500).json({
-                message: "Failed to send reset password email",
-            });
-        }
-
-        res.status(200).json({
-             message: "Reset password email sent." 
-        });
-
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: "Internal server error" });
-    }
-}
-
-const verifyResetPasswordTokenAndResetPassword = async (req, res) => {
-    try {
-        const { token, newPassword, confirmPassword } = req.body;
-        const payload = jwt.verify(token, process.env.JWT_SECRET);
-        
-         if (!payload) {
-            return res.status(401).json({ message: "Unauthorized" });
-        }
-
-        const { userId, purpose } = payload;
-        
-        if (purpose !== "reset-password") {
-            return res.status(401).json({ message: "Unauthorized" });
-        }
-        
-        const verification = await Verification.findOne({
-            userId,
-            token,
-        });
-        
-        if (!verification) {
-            return res.status(401).json({ message: "Unauthorized" });
-        }
-
-        const isTokenExpired = verification.expiresAt < new Date();
-        
-        if (isTokenExpired) {
-            return res.status(401).json({ message: "Token expired" });
-        }
-
-        const user = await User.findById(userId);
-        
-        if (!user) {
-            return res.status(401).json({ message: "Unauthorized" });
         }
 
         if (newPassword !== confirmPassword) {
@@ -327,8 +177,6 @@ const verifyResetPasswordTokenAndResetPassword = async (req, res) => {
 
         user.password = hashedPassword;
         await user.save();
-
-        await Verification.findByIdAndDelete(verification._id);
         
         res.status(200).json({ message: "Password reset successfully" });
 
@@ -338,4 +186,34 @@ const verifyResetPasswordTokenAndResetPassword = async (req, res) => {
     }
 }
 
-export { registerUser, loginUser, verifyEmail, resetPasswordRequest, verifyResetPasswordTokenAndResetPassword };
+const googleAuthCallback = async (req, res) => {
+    try {
+        const user = req.user;
+        
+        if (!user) {
+            return res.redirect(`${process.env.FRONTEND_URL}/sign-in?error=authentication_failed`);
+        }
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { userId: user._id, purpose: "login" },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        // Redirect to frontend with token and user data
+        const userData = encodeURIComponent(JSON.stringify({
+            _id: user._id,
+            email: user.email,
+            name: user.name,
+            profilePicture: user.profilePicture,
+        }));
+        
+        res.redirect(`${process.env.FRONTEND_URL}/auth/google/success?token=${token}&user=${userData}`);
+    } catch (error) {
+        console.log(error);
+        res.redirect(`${process.env.FRONTEND_URL}/sign-in?error=server_error`);
+    }
+};
+
+export { registerUser, loginUser, resetPassword, googleAuthCallback };

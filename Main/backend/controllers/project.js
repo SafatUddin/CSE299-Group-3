@@ -1,6 +1,7 @@
 import Workspace from "../models/workspace.js";
 import Project from "../models/project.js";
 import Task from "../models/task.js";
+import { createNotification } from "./notification.js";
 
 const createProject = async (req, res) => {
   try {
@@ -41,6 +42,25 @@ const createProject = async (req, res) => {
 
     workspace.projects.push(newProject._id);
     await workspace.save();
+
+    // Create notifications for project members
+    if (members && members.length > 0) {
+      const notificationPromises = members
+        .filter((member) => member.user.toString() !== req.user._id.toString())
+        .map((member) =>
+          createNotification({
+            user: member.user,
+            type: "added_to_project",
+            message: `added you to project "${title}"`,
+            resourceType: "Project",
+            resourceId: newProject._id,
+            workspace: workspaceId,
+            actionBy: req.user._id,
+          })
+        );
+      
+      await Promise.all(notificationPromises);
+    }
 
     return res.status(201).json(newProject);
 
@@ -89,7 +109,7 @@ const getProjectTasks = async (req, res) => {
     const { projectId } = req.params;
     const project = await Project.findById(projectId)
       .select("title description status startDate dueDate progress tags members createdBy createdAt updatedAt")
-      .populate("members.user", "name email")
+      .populate("members.user", "name email profilePicture")
       .lean();
 
     if (!project) {
@@ -113,7 +133,7 @@ const getProjectTasks = async (req, res) => {
       isArchived: false,
     })
       .select("title description status priority assignees dueDate createdAt updatedAt")
-      .populate("assignees", "name email")
+      .populate("assignees", "name email profilePicture")
       .sort({ createdAt: -1 })
       .lean();
 

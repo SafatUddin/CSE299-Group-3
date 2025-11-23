@@ -300,7 +300,7 @@ Database models defined with Mongoose: User, Workspace, Project, Task, Comment, 
 - Implemented `“get-user-profile”`, `“update-user-profile”` & `“change-password”` in user-profile
 - Made changes to `“schema”` to invite members, add attachments and other functionalities for this week's update.
 
-Frontend:
+**Frontend:**
 
 *Done By Zunayed:*
 - Implemented `"archived"` page to see the archived tasks
@@ -317,3 +317,41 @@ Frontend:
 *Done By Safat:*
 - Created an `“invite members”` interface to invite members into workspace.
 - Implemented `"React Query hooks"` to handle fetching and updating data; relevant queries automatically refresh after mutations. 
+
+****
+
+## Update-6
+
+[Update-6 Video Demo]()
+
+[Update-6 Report](./Others/Update-6.pdf)
+
+****
+
+**Backend:**
+
+*Done By Safat:*
+- Implemented *`Google OAuth`*, allowing users to sign in or sign up using their Google accounts.
+- Implemented the *`Notifications`* system. Users now receive notifications when:
+	- users are added to a project
+	- the project description is updated for a project users are part of
+	- users are assigned to a task
+	- the task description is updated for a task users are assigned to
+	- attachments are added to task user is assigned to
+	- another user comments on a task user is assigned to
+- Implemented *`profile picture`* functionality, users can upload or remove their profile picture from their account.
+
+**Frontend:**
+
+*Done By Zunayed:*
+- Implemented the *`task due date selector`* button in the task description page
+
+*Done By Farhan:*
+- Implemented the *`notification UI`*, including a dropdown that displays all notifications for the user.
+- Implemented the *`dark & light theme`* switching using a toggle button.
+- Implemented the UI for uploading and displaying *`profile picture`* 
+- Added the *`"Continue with Google"`* button on both the sign-in and sign-up pages.
+
+*Done By Safat:*
+- Implemented *`"React Query hooks"`* to handle data fetching and mutations, with automatic cache update after changes. 
+- Implemented the *`Google OAuth`* interface for sign-in and sign-up.

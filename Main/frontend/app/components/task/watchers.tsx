@@ -1,4 +1,5 @@
 import type { User } from "@/types";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export const Watchers = ({ watchers }: { watchers: User[] }) => {
   return (
@@ -9,9 +10,17 @@ export const Watchers = ({ watchers }: { watchers: User[] }) => {
         {watchers && watchers.length > 0 ? (
           watchers.map((watcher) => (
             <div key={watcher._id} className="flex items-center gap-2">
-              <div className="size-6 rounded-full bg-gray-700 flex items-center justify-center text-white font-semibold text-xs">
-                {watcher.name.charAt(0).toUpperCase()}
-              </div>
+              <Avatar className="size-6">
+                {watcher.profilePicture && (
+                  <AvatarImage
+                    src={`${import.meta.env.VITE_API_URL.replace('/api-v1', '')}${watcher.profilePicture}`}
+                    alt={watcher.name}
+                  />
+                )}
+                <AvatarFallback className="bg-gray-700 text-white font-semibold text-xs">
+                  {watcher.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
 
               <p className="text-sm text-muted-foreground">{watcher.name}</p>
             </div>

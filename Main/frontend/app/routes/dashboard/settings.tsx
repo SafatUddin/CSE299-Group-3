@@ -6,13 +6,21 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/provider/auth-context";
-import { Camera, Lock, Mail, User } from "lucide-react";
-import { useState } from "react";
+import { Camera, Lock, Mail, User, Loader2, Trash2, LogOut } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
+import { useUploadProfilePicture, useDeleteProfilePicture } from "@/hooks/use-user";
 
 const Settings = () => {
   const { user, logout } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const { mutate: uploadProfilePicture, isPending: isUploadingPicture } = 
+    useUploadProfilePicture();
+  const { mutate: deleteProfilePicture, isPending: isDeletingPicture } = 
+    useDeleteProfilePicture();
 
   const [profileData, setProfileData] = useState({
     name: user?.name || "",
@@ -67,6 +75,64 @@ const Settings = () => {
     await logout();
   };
 
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    // Preview image
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload image
+    uploadProfilePicture(file, {
+      onSuccess: () => {
+        toast.success('Profile picture updated successfully');
+      },
+      onError: (error: any) => {
+        toast.error(error.message || 'Failed to upload profile picture');
+        setSelectedImage(null);
+      },
+    });
+  };
+
+  const handleDeleteProfilePicture = () => {
+    if (!user?.profilePicture) return;
+
+    deleteProfilePicture(undefined, {
+      onSuccess: () => {
+        toast.success('Profile picture deleted successfully');
+        setSelectedImage(null);
+      },
+      onError: (error: any) => {
+        toast.error(error.message || 'Failed to delete profile picture');
+      },
+    });
+  };
+
+  const handleCameraClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Clear selected image when user profile picture changes
+  useEffect(() => {
+    setSelectedImage(null);
+  }, [user?.profilePicture]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -99,23 +165,87 @@ const Settings = () => {
             <CardContent className="space-y-6">
               <div className="flex items-center gap-6">
                 <div className="relative">
-                  <Avatar className="w-24 h-24">
-                    <AvatarImage src={user?.profilePicture} />
+                  <Avatar className="w-24 h-24" key={user?.profilePicture || 'no-picture'}>
+                    {(selectedImage || user?.profilePicture) && (
+                      <AvatarImage 
+                        src={selectedImage || (user?.profilePicture ? `${import.meta.env.VITE_API_URL.replace('/api-v1', '')}${user.profilePicture}` : undefined)}
+                        alt={user?.name}
+                      />
+                    )}
                     <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
                       {user?.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <Button
+                    type="button"
                     size="icon"
                     variant="secondary"
                     className="absolute bottom-0 right-0 rounded-full"
+                    onClick={handleCameraClick}
+                    disabled={isUploadingPicture}
                   >
-                    <Camera className="w-4 h-4" />
+                    {isUploadingPicture ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Camera className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
-                <div>
+                <div className="flex-1">
                   <h3 className="font-semibold">{user?.name}</h3>
-                  <p className="text-sm text-muted-foreground">{user?.email}</p>
+                  <p className="text-sm text-muted-foreground mb-3">{user?.email}</p>
+                  
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCameraClick}
+                      disabled={isUploadingPicture}
+                    >
+                      {isUploadingPicture ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        'Change Photo'
+                      )}
+                    </Button>
+                    {user?.profilePicture && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleDeleteProfilePicture}
+                        disabled={isDeletingPicture}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        {isDeletingPicture ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Remove
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    JPG, PNG or GIF. Max 5MB.
+                  </p>
                 </div>
               </div>
 
@@ -224,12 +354,12 @@ const Settings = () => {
               <Separator />
 
               <div className="space-y-4">
-                {/* <div>
+                <div>
                   <h3 className="font-semibold mb-2">Danger Zone</h3>
                   <p className="text-sm text-muted-foreground mb-4">
                     Actions that affect your account security
                   </p>
-                </div> */}
+                </div>
 
                 <Button variant="destructive" onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />
@@ -243,24 +373,5 @@ const Settings = () => {
     </div>
   );
 };
-
-const LogOut = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-    <polyline points="16 17 21 12 16 7" />
-    <line x1="21" y1="12" x2="9" y2="12" />
-  </svg>
-);
 
 export default Settings;

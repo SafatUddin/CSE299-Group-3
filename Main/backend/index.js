@@ -4,10 +4,15 @@ import express from "express";
 import mongoose from "mongoose";
 import morgan from "morgan";
 import compression from "compression";
+import passport from "passport";
+import configurePassport from "./libs/passport-config.js";
 
 import routes from "./routes/index.js";
 
 dotenv.config();
+
+// Configure passport after dotenv loads environment variables
+configurePassport();
 
 const app = express();
 
@@ -19,10 +24,13 @@ app.use(
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     methods: ["GET", "POST", "DELETE", "PUT", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: false,
+    credentials: true,
     })
 );
 app.use(morgan("dev"));
+
+// Initialize passport
+app.use(passport.initialize());
 
 // Serve static files (attachments)
 app.use('/uploads', express.static('uploads'));

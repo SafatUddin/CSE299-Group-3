@@ -4,6 +4,7 @@ import Comment from "../models/comment.js";
 import Project from "../models/project.js";
 import Task from "../models/task.js";
 import Workspace from "../models/workspace.js";
+import { createNotification } from "./notification.js";
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";
@@ -54,6 +55,25 @@ const createTask = async (req, res) => {
     project.tasks.push(newTask._id);
     await project.save();
 
+    // Create notifications for assigned users (excluding the creator)
+    if (assignees && assignees.length > 0) {
+      const notificationPromises = assignees
+        .filter((assignee) => assignee.toString() !== req.user._id.toString())
+        .map((assignee) =>
+          createNotification({
+            user: assignee,
+            type: "assigned_to_task",
+            message: `assigned you to task "${title}"`,
+            resourceType: "Task",
+            resourceId: newTask._id,
+            workspace: project.workspace,
+            actionBy: req.user._id,
+          })
+        );
+      
+      await Promise.all(notificationPromises);
+    }
+
     res.status(201).json(newTask);
   } catch (error) {
     console.log(error);
@@ -68,8 +88,8 @@ const getTaskById = async (req, res) => {
     const { taskId } = req.params;
 
     const task = await Task.findById(taskId)
-    .populate("assignees", "name email")
-    .populate("watchers", "name email")
+    .populate("assignees", "name email profilePicture")
+    .populate("watchers", "name email profilePicture")
     .lean();
 
     if (!task) {
@@ -79,8 +99,8 @@ const getTaskById = async (req, res) => {
     }
 
     const project = await Project.findById(task.project)
-      .select("title members")
-      .populate("members.user", "name email")
+      .select("title members workspace")
+      .populate("members.user", "name email profilePicture")
       .lean();
 
     // Check if user is assigned to the task
@@ -109,7 +129,7 @@ const updateTaskTitle = async (req, res) => {
     const { taskId } = req.params;
     const { title } = req.body;
 
-    const task = await Task.findById(taskId);
+    const task = await Task.findById(taskId).populate('assignees', '_id');
 
     if (!task) {
       return res.status(404).json({
@@ -140,6 +160,25 @@ const updateTaskTitle = async (req, res) => {
     task.title = title;
     await task.save();
 
+    // Notify all assignees except the user making the change
+    if (task.assignees && task.assignees.length > 0) {
+      const notificationPromises = task.assignees
+        .filter((assignee) => assignee._id.toString() !== req.user._id.toString())
+        .map((assignee) =>
+          createNotification({
+            user: assignee._id,
+            type: "task_description_updated",
+            message: `updated the title of task from "${oldTitle}" to "${title}"`,
+            resourceType: "Task",
+            resourceId: task._id,
+            workspace: project.workspace,
+            actionBy: req.user._id,
+          })
+        );
+      
+      await Promise.all(notificationPromises);
+    }
+
     // record activity
     await recordActivity(req.user._id, "updated_task", "Task", taskId, {
       description: `updated task title from ${oldTitle} to ${title}`,
@@ -159,7 +198,7 @@ const updateTaskDescription = async (req, res) => {
     const { taskId } = req.params;
     const { description } = req.body;
 
-    const task = await Task.findById(taskId);
+    const task = await Task.findById(taskId).populate('assignees', '_id');
 
     if (!task) {
       return res.status(404).json({
@@ -194,6 +233,25 @@ const updateTaskDescription = async (req, res) => {
     task.description = description;
     await task.save();
 
+    // Notify all assignees except the user making the change
+    if (task.assignees && task.assignees.length > 0) {
+      const notificationPromises = task.assignees
+        .filter((assignee) => assignee._id.toString() !== req.user._id.toString())
+        .map((assignee) =>
+          createNotification({
+            user: assignee._id,
+            type: "task_description_updated",
+            message: `updated the description for task "${task.title}"`,
+            resourceType: "Task",
+            resourceId: task._id,
+            workspace: project.workspace,
+            actionBy: req.user._id,
+          })
+        );
+      
+      await Promise.all(notificationPromises);
+    }
+
     // record activity
     await recordActivity(req.user._id, "updated_task", "Task", taskId, {
       description: `updated task description from ${oldDescription} to ${newDescription}`,
@@ -213,7 +271,7 @@ const updateTaskStatus = async (req, res) => {
     const { taskId } = req.params;
     const { status } = req.body;
 
-    const task = await Task.findById(taskId);
+    const task = await Task.findById(taskId).populate('assignees', '_id');
 
     if (!task) {
       return res.status(404).json({
@@ -243,6 +301,25 @@ const updateTaskStatus = async (req, res) => {
 
     task.status = status;
     await task.save();
+
+    // Notify all assignees except the user making the change
+    if (task.assignees && task.assignees.length > 0) {
+      const notificationPromises = task.assignees
+        .filter((assignee) => assignee._id.toString() !== req.user._id.toString())
+        .map((assignee) =>
+          createNotification({
+            user: assignee._id,
+            type: "task_status_updated",
+            message: `changed status of task "${task.title}" from ${oldStatus} to ${status}`,
+            resourceType: "Task",
+            resourceId: task._id,
+            workspace: project.workspace,
+            actionBy: req.user._id,
+          })
+        );
+      
+      await Promise.all(notificationPromises);
+    }
 
     // record activity
     await recordActivity(req.user._id, "updated_task", "Task", taskId, {
@@ -289,10 +366,33 @@ const updateTaskAssignees = async (req, res) => {
       });
     }
 
-    const oldAssignees = task.assignees;
+    const oldAssignees = task.assignees.map(a => a.toString());
+    const newAssignees = assignees.map(a => a.toString());
 
     task.assignees = assignees;
     await task.save();
+
+    // Find newly added assignees
+    const addedAssignees = newAssignees.filter(a => !oldAssignees.includes(a));
+    
+    // Create notifications for newly assigned users
+    if (addedAssignees.length > 0) {
+      const notificationPromises = addedAssignees
+        .filter((assignee) => assignee !== req.user._id.toString())
+        .map((assignee) =>
+          createNotification({
+            user: assignee,
+            type: "assigned_to_task",
+            message: `assigned you to task "${task.title}"`,
+            resourceType: "Task",
+            resourceId: task._id,
+            workspace: project.workspace,
+            actionBy: req.user._id,
+          })
+        );
+      
+      await Promise.all(notificationPromises);
+    }
 
     // record activity
     await recordActivity(req.user._id, "updated_task", "Task", taskId, {
@@ -313,7 +413,7 @@ const updateTaskPriority = async (req, res) => {
     const { taskId } = req.params;
     const { priority } = req.body;
 
-    const task = await Task.findById(taskId);
+    const task = await Task.findById(taskId).populate('assignees', '_id');
 
     if (!task) {
       return res.status(404).json({
@@ -344,9 +444,102 @@ const updateTaskPriority = async (req, res) => {
     task.priority = priority;
     await task.save();
 
+    // Notify all assignees except the user making the change
+    if (task.assignees && task.assignees.length > 0) {
+      const notificationPromises = task.assignees
+        .filter((assignee) => assignee._id.toString() !== req.user._id.toString())
+        .map((assignee) =>
+          createNotification({
+            user: assignee._id,
+            type: "task_priority_updated",
+            message: `changed priority of task "${task.title}" from ${oldPriority} to ${priority}`,
+            resourceType: "Task",
+            resourceId: task._id,
+            workspace: project.workspace,
+            actionBy: req.user._id,
+          })
+        );
+      
+      await Promise.all(notificationPromises);
+    }
+
     // record activity
     await recordActivity(req.user._id, "updated_task", "Task", taskId, {
       description: `updated task priority from ${oldPriority} to ${priority}`,
+    });
+
+    res.status(200).json(task);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+const updateTaskDueDate = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { dueDate } = req.body;
+
+    const task = await Task.findById(taskId).populate('assignees', '_id');
+
+    if (!task) {
+      return res.status(404).json({
+        message: "Task not found",
+      });
+    }
+
+    const project = await Project.findById(task.project);
+
+    if (!project) {
+      return res.status(404).json({
+        message: "Project not found",
+      });
+    }
+
+    const isMember = project.members.some(
+      (member) => member.user.toString() === req.user._id.toString()
+    );
+
+    if (!isMember) {
+      return res.status(403).json({
+        message: "You are not a member of this project",
+      });
+    }
+
+    const oldDueDate = task.dueDate 
+      ? new Date(task.dueDate).toLocaleDateString() 
+      : "No due date";
+    const newDueDateStr = dueDate 
+      ? new Date(dueDate).toLocaleDateString() 
+      : "No due date";
+
+    task.dueDate = dueDate;
+    await task.save();
+
+    // Notify all assignees except the user making the change
+    if (task.assignees && task.assignees.length > 0) {
+      const notificationPromises = task.assignees
+        .filter((assignee) => assignee._id.toString() !== req.user._id.toString())
+        .map((assignee) =>
+          createNotification({
+            user: assignee._id,
+            type: "task_due_date_updated",
+            message: `changed due date of task "${task.title}" from ${oldDueDate} to ${newDueDateStr}`,
+            resourceType: "Task",
+            resourceId: task._id,
+            workspace: project.workspace,
+            actionBy: req.user._id,
+          })
+        );
+      
+      await Promise.all(notificationPromises);
+    }
+
+    // record activity
+    await recordActivity(req.user._id, "updated_task", "Task", taskId, {
+      description: `updated task due date from ${oldDueDate} to ${newDueDateStr}`,
     });
 
     res.status(200).json(task);
@@ -526,7 +719,8 @@ const getCommentsByTaskId = async (req, res) => {
           updatedAt: 1,
           "author._id": 1,
           "author.name": 1,
-          "author.email": 1
+          "author.email": 1,
+          "author.profilePicture": 1
         }
       }
     ]);
@@ -933,6 +1127,7 @@ export {
   updateTaskStatus,
   updateTaskAssignees,
   updateTaskPriority,
+  updateTaskDueDate,
   addSubTask,
   updateSubTask,
   getActivityByResourceId,

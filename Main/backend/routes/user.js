@@ -4,9 +4,12 @@ import {
   changePassword,
   getUserProfile,
   updateUserProfile,
+  uploadProfilePicture,
+  deleteProfilePicture,
 } from "../controllers/user.js";
 import { z } from "zod";
 import { validateRequest } from "zod-express-middleware";
+import upload from "../middleware/upload-middleware.js";
 
 const router = express.Router();
 
@@ -33,6 +36,19 @@ router.put(
     }),
   }),
   changePassword
+);
+
+router.post(
+  "/profile-picture",
+  authenticateUser,
+  upload.single('profilePicture'),
+  uploadProfilePicture
+);
+
+router.delete(
+  "/profile-picture",
+  authenticateUser,
+  deleteProfilePicture
 );
 
 export default router;

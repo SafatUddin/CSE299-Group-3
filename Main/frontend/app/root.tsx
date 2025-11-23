@@ -11,6 +11,8 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import ReactQueryProvider from "./provider/react-query-provider";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "./provider/theme-provider";
+import { AuthProvider } from "./provider/auth-context";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -27,12 +29,31 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const theme = localStorage.getItem('project-manager-theme');
+                const root = document.documentElement;
+                
+                if (theme === 'dark') {
+                  root.classList.add('dark');
+                } else if (theme === 'light') {
+                  root.classList.add('light');
+                } else {
+                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  root.classList.add(systemTheme);
+                }
+              })();
+            `,
+          }}
+        />
       </head>
       <body>
         {children}
@@ -45,10 +66,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <ReactQueryProvider>
-      <Outlet />
-      <Toaster position="top-center" richColors />
-    </ReactQueryProvider>
+    <ThemeProvider defaultTheme="system" storageKey="project-manager-theme">
+      <ReactQueryProvider>
+        <AuthProvider>
+          <Outlet />
+          <Toaster position="top-center" richColors />
+        </AuthProvider>
+      </ReactQueryProvider>
+    </ThemeProvider>
   );
 }
 

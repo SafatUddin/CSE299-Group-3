@@ -97,8 +97,13 @@ const Members = () => {
                     className="flex flex-col md:flex-row items-center justify-between p-4 gap-3"
                   >
                     <div className="flex items-center space-x-4">
-                      <Avatar className="bg-gray-500">
-                        <AvatarImage src={member.user.profilePicture} />
+                      <Avatar className="bg-gray-500" key={member.user.profilePicture || `no-pic-${member.user._id}`}>
+                        {member.user.profilePicture && (
+                          <AvatarImage 
+                            src={`${import.meta.env.VITE_API_URL.replace('/api-v1', '')}${member.user.profilePicture}`}
+                            alt={member.user.name}
+                          />
+                        )}
                         <AvatarFallback>
                           {member.user.name.charAt(0)}
                         </AvatarFallback>
@@ -138,8 +143,13 @@ const Members = () => {
             {filteredMembers.map((member) => (
               <Card key={member.user._id} className="">
                 <CardContent className="p-6 flex flex-col items-center text-center">
-                  <Avatar className="bg-gray-500 size-20 mb-4">
-                    <AvatarImage src={member.user.profilePicture} />
+                  <Avatar className="bg-gray-500 size-20 mb-4" key={member.user.profilePicture || `no-pic-${member.user._id}`}>
+                    {member.user.profilePicture && (
+                      <AvatarImage 
+                        src={`${import.meta.env.VITE_API_URL.replace('/api-v1', '')}${member.user.profilePicture}`}
+                        alt={member.user.name}
+                      />
+                    )}
                     <AvatarFallback className="uppercase">
                       {member.user.name.substring(0, 2)}
                     </AvatarFallback>

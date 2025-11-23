@@ -9,6 +9,7 @@ export default [
         route("forgot-password", "routes/auth/forgot-password.tsx"),
         route("reset-password", "routes/auth/reset-password.tsx"),
         route("verify-email", "routes/auth/verify-email.tsx"),
+        route("auth/google/success", "routes/auth/google-success.tsx"),
     ]),
     
     layout("routes/dashboard/dashboard-layout.tsx", [

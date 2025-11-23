@@ -1,8 +1,9 @@
-import { createContext, use, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type { User } from "@/types";
 import { queryClient } from "./react-query-provider";
 import { useLocation, useNavigate } from "react-router";
 import { publicRoutes } from "@/lib";
+import { toast } from "sonner";
 
 interface AuthContextType {
     user: User | null;
@@ -44,14 +45,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         const handleLogout = () => {
-            logout();
+            // Clear all localStorage
+            localStorage.clear();
+            
+            setUser(null);
+            setIsAuthenticated(false);
+            queryClient.clear();
+            
+            // Show notification
+            toast.error("Session expired. Please sign in again.");
+            
+            // Navigate to sign-in
             navigate("/sign-in");
         };
+        
+        const handleUserUpdate = (event: any) => {
+            const userInfo = localStorage.getItem("user");
+            if (userInfo) {
+                const updatedUser = JSON.parse(userInfo);
+                setUser(updatedUser);
+            }
+        };
+        
         window.addEventListener("force-logout", handleLogout);
+        window.addEventListener("user-updated", handleUserUpdate);
+        
         return () => {
             window.removeEventListener("force-logout", handleLogout);
+            window.removeEventListener("user-updated", handleUserUpdate);
         };
-    });
+    }, [navigate]);
 
     const login = async (data: any) => {
         localStorage.setItem("token", data.token);

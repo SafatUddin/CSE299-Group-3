@@ -34,7 +34,7 @@ export const TaskTitle = ({
     };
 
     return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 mb-6">
       {isEditing ? (
         <Input
           className="text-xl! font-semibold w-full min-w-3xl"

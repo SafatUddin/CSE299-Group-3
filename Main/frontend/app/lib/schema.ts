@@ -19,15 +19,12 @@ export const signUpSchema = z
 
 export const resetPasswordSchema = z
 .object({
+    email: z.string().email("Invalid email address"),
     newPassword: z.string().min(8, "Password must be 8 characters"),
     confirmPassword: z.string().min(8, "Password must be 8 characters"),
 }).refine((data) => data.newPassword === data.confirmPassword, {
     path: ["confirmPassword"],
     message: "Passwords do not match",
-});
-
-export const forgotPasswordSchema = z.object({
-  email: z.string().email("Invalid email address"),
 });
 
 export const workspaceSchema = z.object({
@@ -60,9 +57,4 @@ export const createTaskSchema = z.object({
   priority: z.enum(["Low", "Medium", "High"]),
   dueDate: z.string().min(1, "Due date is required"),
   assignees: z.array(z.string()).min(1, "At least one assignee is required"),
-});
-
-export const inviteMemberSchema = z.object({
-  email: z.string().email(),
-  role: z.enum(["admin", "member", "viewer"]),
 });

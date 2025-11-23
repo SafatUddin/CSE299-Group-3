@@ -189,3 +189,26 @@ export interface WorkspaceProductivityData {
   completed: number;
   total: number;
 }
+
+export type NotificationType =
+  | "workspace_created"
+  | "added_to_workspace"
+  | "added_to_project"
+  | "assigned_to_task"
+  | "task_description_updated"
+  | "task_status_updated"
+  | "task_priority_updated"
+  | "task_due_date_updated";
+
+export interface Notification {
+  _id: string;
+  user: string;
+  type: NotificationType;
+  message: string;
+  resourceType: ResourceType;
+  resourceId: string;
+  workspace: Workspace | string;
+  isRead: boolean;
+  actionBy: User;
+  createdAt: Date;
+}

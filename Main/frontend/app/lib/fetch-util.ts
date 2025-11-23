@@ -27,11 +27,15 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Simplified response interceptor - only handle 401
+// Simplified response interceptor - handle 401 and clear storage
 api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
+            // Clear localStorage immediately
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            // Dispatch logout event
             window.dispatchEvent(new Event("force-logout"));
         }
         return Promise.reject(error);
@@ -55,7 +59,12 @@ const fetchData = async <T>(path: string): Promise<T> => {
     });
     
     if (response.status === 401) {
+        // Clear localStorage immediately
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        // Dispatch logout event
         window.dispatchEvent(new Event("force-logout"));
+        throw new Error("Unauthorized");
     }
     
     if (!response.ok) {

@@ -1,5 +1,6 @@
 import type { ProjectMemberRole, Task, User } from "@/types";
 import { useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { useUpdateTaskAssigneesMutation } from "@/hooks/use-task";
@@ -78,12 +79,20 @@ export const TaskAssigneesSelector = ({
             .map((m) => (
               <div
                 key={m.user._id}
-                className="flex items-center bg-gray-100 rounded px-2 py-1"
+                className="flex items-center bg-gray-800 border border-gray-700 rounded px-2 py-1"
               >
-                <div className="size-6 mr-1 rounded-full bg-gray-700 flex items-center justify-center text-white font-semibold text-xs">
-                  {m.user.name.charAt(0).toUpperCase()}
-                </div>
-                <span className="text-xs text-muted-foreground">
+                <Avatar className="size-6 mr-1">
+                  {m.user.profilePicture && (
+                    <AvatarImage
+                      src={`${import.meta.env.VITE_API_URL.replace('/api-v1', '')}${m.user.profilePicture}`}
+                      alt={m.user.name}
+                    />
+                  )}
+                  <AvatarFallback className="bg-gray-700 text-white font-semibold text-xs">
+                    {m.user.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-xs text-gray-300">
                   {m.user.name}
                 </span>
               </div>
@@ -94,7 +103,7 @@ export const TaskAssigneesSelector = ({
       {/* dropdown */}
       <div className="relative">
         <button
-          className="text-sm text-muted-foreground w-full border rounded px-3 py-2 text-left bg-white"
+          className="text-sm text-muted-foreground w-full border rounded px-3 py-2 text-left bg-gray-800 hover:bg-gray-700"
           onClick={() => setDropDownOpen(!dropDownOpen)}
         >
           {selectedIds.length === 0
@@ -103,16 +112,16 @@ export const TaskAssigneesSelector = ({
         </button>
 
         {dropDownOpen && (
-          <div className="absolute z-10 mt-1 w-full bg-white border rounded shadow-lg max-h-60 overflow-y-auto">
-            <div className="flex justify-between px-2 py-1 border-b">
+          <div className="absolute z-10 mt-1 w-full bg-gray-800 border border-gray-700 rounded shadow-lg max-h-60 overflow-y-auto">
+            <div className="flex justify-between px-2 py-1 border-b border-gray-700">
               <button
-                className="text-xs text-blue-600"
+                className="text-xs text-blue-400"
                 onClick={handleSelectAll}
               >
                 Select all
               </button>
               <button
-                className="text-xs text-red-600"
+                className="text-xs text-red-400"
                 onClick={handleUnSelectAll}
               >
                 Unselect all
@@ -121,7 +130,7 @@ export const TaskAssigneesSelector = ({
 
             {projectMembers.map((m) => (
               <label
-                className="flex items-center px-3 py-2 cursor-pointer hover:bg-gray-50"
+                className="flex items-center px-3 py-2 cursor-pointer hover:bg-gray-700"
                 key={m.user._id}
               >
                 <Checkbox
@@ -130,9 +139,17 @@ export const TaskAssigneesSelector = ({
                   className="mr-2"
                 />
 
-                <div className="size-6 mr-2 rounded-full bg-gray-700 flex items-center justify-center text-white font-semibold text-xs">
-                  {m.user.name.charAt(0).toUpperCase()}
-                </div>
+                <Avatar className="size-6 mr-2">
+                  {m.user.profilePicture && (
+                    <AvatarImage
+                      src={`${import.meta.env.VITE_API_URL.replace('/api-v1', '')}${m.user.profilePicture}`}
+                      alt={m.user.name}
+                    />
+                  )}
+                  <AvatarFallback className="bg-gray-700 text-white font-semibold text-xs">
+                    {m.user.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
 
                 <span>{m.user.name}</span>
               </label>

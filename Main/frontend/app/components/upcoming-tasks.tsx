@@ -33,7 +33,7 @@ export const UpcomingTasks = ({ data }: { data: Task[] }) => {
         ) : (
           tasks.map((task) => (
             <Link
-              to={`/workspace${workspaceId}/projects/${task.project}/tasks/${task._id}`}
+              to={`/workspace/${workspaceId}/projects/${task.project}/tasks/${task._id}`}
               key={task._id}
               className="flex items-start space-x-3 border-b pb-3 last:border-0"
             >

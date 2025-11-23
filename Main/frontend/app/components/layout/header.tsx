@@ -1,7 +1,7 @@
 import { useAuth } from "@/provider/auth-context";
 import type { Workspace } from "@/types";
 import { Button } from "../ui/button";
-import { Bell, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,10 +11,12 @@ import {
   DropdownMenuItem,
   DropdownMenuGroup,
 } from "../ui/dropdown-menu";
-import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { WorkspaceAvatar } from "../workspace/workspace-avatar";
 import { useEffect } from "react";
+import { NotificationDropdown } from "./notification-dropdown";
+import { ThemeToggle } from "./theme-toggle";
 
 interface HeaderProps {
   onWorkspaceSelected: (workspace: Workspace) => void;
@@ -39,9 +41,9 @@ export const Header = ({
   // Extract workspaceId from URL if present
   const workspaceIdFromUrl = params.workspaceId || location.pathname.split('/')[2];
   
-  // Reset workspace selection on archived and settings pages
+  // Reset workspace selection on archived, settings, and my-tasks pages
   useEffect(() => {
-    if (location.pathname === '/archived' || location.pathname === '/settings') {
+    if (location.pathname === '/archived' || location.pathname === '/settings' || location.pathname === '/my-tasks') {
       onWorkspaceSelected(null as any);
     }
   }, [location.pathname, onWorkspaceSelected]);
@@ -117,14 +119,19 @@ export const Header = ({
         </DropdownMenu>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon">
-            <Bell />
-          </Button>
+          <ThemeToggle />
+          <NotificationDropdown />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="rounded-full border p-0 w-10 h-10 overflow-hidden">
-                <Avatar className="w-full h-full">
+                <Avatar className="w-full h-full" key={user?.profilePicture || 'no-picture'}>
+                  {user?.profilePicture && (
+                    <AvatarImage
+                      src={`${import.meta.env.VITE_API_URL.replace('/api-v1', '')}${user.profilePicture}`}
+                      alt={user.name}
+                    />
+                  )}
                   <AvatarFallback className="bg-gray-900 text-white dark:bg-gray-800 font-semibold">
                     {user?.name?.charAt(0).toUpperCase()}
                   </AvatarFallback>

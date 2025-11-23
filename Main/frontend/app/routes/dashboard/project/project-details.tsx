@@ -10,13 +10,25 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UseProjectQuery } from "@/hooks/use-project";
 import { useGetWorkspaceDetailsQuery } from "@/hooks/use-workspace";
+import { useUpdateTaskStatusMutation } from "@/hooks/use-task";
 import { getProjectProgress } from "@/lib";
 import { cn } from "@/lib/utils";
 import type { Project, Task, TaskStatus } from "@/types";
 import { format } from "date-fns";
-import { AlertCircle, Calendar, CheckCircle, Clock, Pencil } from "lucide-react";
+import { Calendar, Pencil } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCorners,
+  useDroppable,
+  useDraggable,
+} from "@dnd-kit/core";
+import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 
 const ProjectDetails = () => {
   const { projectId, workspaceId } = useParams<{
@@ -28,6 +40,17 @@ const ProjectDetails = () => {
   const [isCreateTask, setIsCreateTask] = useState(false);
   const [isEditProject, setIsEditProject] = useState(false);
   const [taskFilter, setTaskFilter] = useState<TaskStatus | "All">("All");
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px of movement before drag starts
+      },
+    })
+  );
+
+  const updateTaskStatusMutation = useUpdateTaskStatusMutation();
 
   const { data, isLoading } = UseProjectQuery(projectId!) as {
     data: {
@@ -60,6 +83,63 @@ const ProjectDetails = () => {
       `/workspace/${workspaceId}/projects/${projectId}/tasks/${taskId}`
     );
   };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    console.log("Drag started:", event.active.id);
+    setActiveTaskId(event.active.id as string);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    console.log("Drag ended - Active:", active.id, "Over:", over?.id);
+    setActiveTaskId(null);
+
+    if (!over) {
+      console.log("No drop target");
+      return;
+    }
+
+    const taskId = active.id as string;
+    const newStatus = over.id as TaskStatus;
+
+    console.log("Moving task:", taskId, "to status:", newStatus);
+
+    // Find the task being dragged
+    const task = tasks.find((t) => t._id === taskId);
+    if (!task) {
+      console.log("Task not found");
+      return;
+    }
+    
+    if (task.status === newStatus) {
+      console.log("Task already in this status");
+      return;
+    }
+
+    console.log("Updating task status...");
+    // Update the task status with optimistic update
+    updateTaskStatusMutation.mutate(
+      {
+        taskId,
+        status: newStatus,
+      },
+      {
+        onSuccess: () => {
+          console.log("Task status updated successfully");
+        },
+        onError: (error) => {
+          console.error("Failed to update task status:", error);
+        },
+      }
+    );
+  };
+
+  const handleDragCancel = () => {
+    setActiveTaskId(null);
+  };
+
+  // Get active task for drag overlay
+  const activeTask = tasks.find((t) => t._id === activeTaskId);
 
   return (
     <div className="space-y-8">
@@ -97,98 +177,120 @@ const ProjectDetails = () => {
       </div>
 
       <div className="flex items-center justify-between">
-        <Tabs defaultValue="all" className="w-full">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <TabsList>
-              <TabsTrigger value="all" onClick={() => setTaskFilter("All")}>
-                All Tasks
-              </TabsTrigger>
-              <TabsTrigger value="todo" onClick={() => setTaskFilter("To Do")}>
-                To Do
-              </TabsTrigger>
-              <TabsTrigger
-                value="in-progress"
-                onClick={() => setTaskFilter("In Progress")}
-              >
-                In Progress
-              </TabsTrigger>
-              <TabsTrigger value="done" onClick={() => setTaskFilter("Done")}>
-                Done
-              </TabsTrigger>
-            </TabsList>
-
-            <div className="flex items-center text-sm">
-              <span className="text-muted-foreground">Status:</span>
-              <div>
-                <Badge variant="outline" className="bg-background">
-                  {tasks.filter((task) => task.status === "To Do").length} To Do
-                </Badge>
-                <Badge variant="outline" className="bg-background">
-                  {tasks.filter((task) => task.status === "In Progress").length}{" "}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <Tabs defaultValue="all" className="w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <TabsList>
+                <TabsTrigger value="all" onClick={() => setTaskFilter("All")}>
+                  All Tasks
+                </TabsTrigger>
+                <TabsTrigger value="todo" onClick={() => setTaskFilter("To Do")}>
+                  To Do
+                </TabsTrigger>
+                <TabsTrigger
+                  value="in-progress"
+                  onClick={() => setTaskFilter("In Progress")}
+                >
                   In Progress
-                </Badge>
-                <Badge variant="outline" className="bg-background">
-                  {tasks.filter((task) => task.status === "Done").length} Done
-                </Badge>
+                </TabsTrigger>
+                <TabsTrigger value="done" onClick={() => setTaskFilter("Done")}>
+                  Done
+                </TabsTrigger>
+              </TabsList>
+
+              <div className="flex items-center text-sm">
+                <span className="text-muted-foreground">Status:</span>
+                <div>
+                  <Badge variant="outline" className="bg-background">
+                    {tasks.filter((task) => task.status === "To Do").length} To Do
+                  </Badge>
+                  <Badge variant="outline" className="bg-background">
+                    {tasks.filter((task) => task.status === "In Progress").length}{" "}
+                    In Progress
+                  </Badge>
+                  <Badge variant="outline" className="bg-background">
+                    {tasks.filter((task) => task.status === "Done").length} Done
+                  </Badge>
+                </div>
               </div>
             </div>
-          </div>
 
-          <TabsContent value="all" className="m-0">
-            <div className="grid grid-cols-3 gap-4">
-              <TaskColumn
-                title="To Do"
-                tasks={tasks.filter((task) => task.status === "To Do")}
-                onTaskClick={handleTaskClick}
-              />
+            <TabsContent value="all" className="m-0">
+              <div className="grid grid-cols-3 gap-4">
+                <DroppableColumn
+                  id="To Do"
+                  title="To Do"
+                  tasks={tasks.filter((task) => task.status === "To Do")}
+                  onTaskClick={handleTaskClick}
+                />
 
-              <TaskColumn
-                title="In Progress"
-                tasks={tasks.filter((task) => task.status === "In Progress")}
-                onTaskClick={handleTaskClick}
-              />
+                <DroppableColumn
+                  id="In Progress"
+                  title="In Progress"
+                  tasks={tasks.filter((task) => task.status === "In Progress")}
+                  onTaskClick={handleTaskClick}
+                />
 
-              <TaskColumn
-                title="Done"
-                tasks={tasks.filter((task) => task.status === "Done")}
-                onTaskClick={handleTaskClick}
-              />
-            </div>
-          </TabsContent>
+                <DroppableColumn
+                  id="Done"
+                  title="Done"
+                  tasks={tasks.filter((task) => task.status === "Done")}
+                  onTaskClick={handleTaskClick}
+                />
+              </div>
+            </TabsContent>
 
-          <TabsContent value="todo" className="m-0">
-            <div className="grid md:grid-cols-1 gap-4">
-              <TaskColumn
-                title="To Do"
-                tasks={tasks.filter((task) => task.status === "To Do")}
-                onTaskClick={handleTaskClick}
-                isFullWidth
-              />
-            </div>
-          </TabsContent>
+            <TabsContent value="todo" className="m-0">
+              <div className="grid md:grid-cols-1 gap-4">
+                <DroppableColumn
+                  id="To Do"
+                  title="To Do"
+                  tasks={tasks.filter((task) => task.status === "To Do")}
+                  onTaskClick={handleTaskClick}
+                  isFullWidth
+                />
+              </div>
+            </TabsContent>
 
-          <TabsContent value="in-progress" className="m-0">
-            <div className="grid md:grid-cols-1 gap-4">
-              <TaskColumn
-                title="In Progress"
-                tasks={tasks.filter((task) => task.status === "In Progress")}
-                onTaskClick={handleTaskClick}
-                isFullWidth
-              />
-            </div>
-          </TabsContent>
+            <TabsContent value="in-progress" className="m-0">
+              <div className="grid md:grid-cols-1 gap-4">
+                <DroppableColumn
+                  id="In Progress"
+                  title="In Progress"
+                  tasks={tasks.filter((task) => task.status === "In Progress")}
+                  onTaskClick={handleTaskClick}
+                  isFullWidth
+                />
+              </div>
+            </TabsContent>
 
-          <TabsContent value="done" className="m-0">
-            <div className="grid md:grid-cols-1 gap-4">
-              <TaskColumn
-                title="Done"
-                tasks={tasks.filter((task) => task.status === "Done")}
-                onTaskClick={handleTaskClick}
-                isFullWidth
-              />
-            </div>
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="done" className="m-0">
+              <div className="grid md:grid-cols-1 gap-4">
+                <DroppableColumn
+                  id="Done"
+                  title="Done"
+                  tasks={tasks.filter((task) => task.status === "Done")}
+                  onTaskClick={handleTaskClick}
+                  isFullWidth
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <DragOverlay>
+            {activeTask ? (
+              <div className="opacity-50 rotate-3">
+                <TaskCard task={activeTask} onClick={() => {}} isDragging />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       </div>
 
       {/* create    task dialog */}
@@ -217,6 +319,119 @@ const ProjectDetails = () => {
 
 export default ProjectDetails;
 
+interface DroppableColumnProps {
+  id: string;
+  title: string;
+  tasks: Task[];
+  onTaskClick: (taskId: string) => void;
+  isFullWidth?: boolean;
+}
+
+const DroppableColumn = ({
+  id,
+  title,
+  tasks,
+  onTaskClick,
+  isFullWidth = false,
+}: DroppableColumnProps) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id: id,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "rounded-lg border-2 p-4 transition-all duration-200",
+        isOver
+          ? "border-primary bg-primary/20 ring-2 ring-primary ring-offset-2"
+          : "border-border bg-muted/30 ",
+        isFullWidth
+          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          : "min-h-[500px]"
+      )}
+    >
+      <div
+        className={cn(
+          "space-y-4",
+          !isFullWidth ? "h-full" : "col-span-full mb-4"
+        )}
+      >
+        {!isFullWidth && (
+          <div className="flex items-center justify-between">
+            <h1 className="font-medium">{title}</h1>
+            <Badge variant="outline">{tasks.length}</Badge>
+          </div>
+        )}
+
+        <div
+          className={cn(
+            "space-y-3",
+            isFullWidth && "grid grid-cols-2 lg:grid-cols-3 gap-4"
+          )}
+        >
+          {tasks.length === 0 ? (
+            <div className="text-center text-sm text-muted-foreground py-8">
+              No tasks yet
+            </div>
+          ) : (
+            tasks.map((task) => (
+              <DraggableTaskCard
+                key={task._id}
+                task={task}
+                onClick={() => onTaskClick(task._id)}
+              />
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Wrapper for TaskCard to make it draggable
+interface DraggableTaskCardProps {
+  task: Task;
+  onClick: () => void;
+}
+
+const DraggableTaskCard = ({ task, onClick }: DraggableTaskCardProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({ 
+    id: task._id,
+    data: {
+      task,
+    }
+  });
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  } : undefined;
+
+  const handleClick = () => {
+    // Only trigger onClick if not dragging
+    if (!isDragging) {
+      onClick();
+    }
+  };
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      {...listeners} 
+      {...attributes}
+      className="touch-none"
+    >
+      <TaskCard task={task} onClick={handleClick} isDragging={isDragging} />
+    </div>
+  );
+};
 
 interface TaskColumnProps {
   title: string;
@@ -277,11 +492,23 @@ const TaskColumn = ({
   );
 };
 
-const TaskCard = ({ task, onClick }: { task: Task; onClick: () => void }) => {
+const TaskCard = ({
+  task,
+  onClick,
+  isDragging = false,
+}: {
+  task: Task;
+  onClick: () => void;
+  isDragging?: boolean;
+}) => {
   return (
     <Card
       onClick={onClick}
-      className="cursor-pointer hover:shadow-md transition-all duration-300 hover:translate-y-1"
+      className={cn(
+        "cursor-grab active:cursor-grabbing transition-all duration-300",
+        "hover:shadow-lg hover:scale-[1.02] hover:border-primary/50",
+        isDragging && "opacity-50 cursor-grabbing"
+      )}
     >
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -297,50 +524,9 @@ const TaskCard = ({ task, onClick }: { task: Task; onClick: () => void }) => {
             {task.priority}
           </Badge>
 
-          <div className="flex gap-1">
-            {task.status !== "To Do" && (
-              <Button
-                variant={"ghost"}
-                size={"icon"}
-                className="size-6"
-                onClick={() => {
-                  console.log("mark as to do");
-                }}
-                title="Mark as To Do"
-              >
-                <AlertCircle className={cn("size-4")} />
-                <span className="sr-only">Mark as To Do</span>
-              </Button>
-            )}
-            {task.status !== "In Progress" && (
-              <Button
-                variant={"ghost"}
-                size={"icon"}
-                className="size-6"
-                onClick={() => {
-                  console.log("mark as in progress");
-                }}
-                title="Mark as In Progress"
-              >
-                <Clock className={cn("size-4")} />
-                <span className="sr-only">Mark as In Progress</span>
-              </Button>
-            )}
-            {task.status !== "Done" && (
-              <Button
-                variant={"ghost"}
-                size={"icon"}
-                className="size-6"
-                onClick={() => {
-                  console.log("mark as done");
-                }}
-                title="Mark as Done"
-              >
-                <CheckCircle className={cn("size-4")} />
-                <span className="sr-only">Mark as Done</span>
-              </Button>
-            )}
-          </div>
+          <Badge variant="secondary" className="text-xs">
+            {task.status}
+          </Badge>
         </div>
       </CardHeader>
 
@@ -363,7 +549,12 @@ const TaskCard = ({ task, onClick }: { task: Task; onClick: () => void }) => {
                     className="relative size-8 bg-gray-700 rounded-full border-2 border-background overflow-hidden"
                     title={member.name}
                   >
-                    <AvatarImage src={member.profilePicture} />
+                    {member.profilePicture && (
+                      <AvatarImage 
+                        src={`${import.meta.env.VITE_API_URL.replace('/api-v1', '')}${member.profilePicture}`}
+                        alt={member.name}
+                      />
+                    )}
                     <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                 ))}

@@ -47,6 +47,12 @@ export const useUpdateTaskTitleMutation = () => {
       queryClient.invalidateQueries({
         queryKey: ["task-activity", data._id],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["workspace", "overall-stats"],
+      });
     },
   });
 };
@@ -57,12 +63,59 @@ export const useUpdateTaskStatusMutation = () => {
   return useMutation({
     mutationFn: (data: { taskId: string; status: TaskStatus }) =>
       updateData(`/tasks/${data.taskId}/status`, { status: data.status }),
+    onMutate: async (variables) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["project"] });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueriesData({ queryKey: ["project"] });
+
+      // Optimistically update all project queries
+      queryClient.setQueriesData({ queryKey: ["project"] }, (old: any) => {
+        if (!old) return old;
+
+        // Update the task in the tasks array
+        if (old.tasks) {
+          return {
+            ...old,
+            tasks: old.tasks.map((task: any) =>
+              task._id === variables.taskId
+                ? { ...task, status: variables.status }
+                : task
+            ),
+          };
+        }
+
+        return old;
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousData };
+    },
+    onError: (err, variables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({
         queryKey: ["task", data._id],
       });
       queryClient.invalidateQueries({
         queryKey: ["task-activity", data._id],
+      });
+      // Invalidate project queries to ensure fresh data
+      queryClient.invalidateQueries({
+        queryKey: ["project"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["workspace", "overall-stats"],
       });
     },
   });
@@ -83,6 +136,12 @@ export const useUpdateTaskDescriptionMutation = () => {
       queryClient.invalidateQueries({
         queryKey: ["task-activity", data._id],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["workspace", "overall-stats"],
+      });
     },
   });
 };
@@ -102,6 +161,9 @@ export const useUpdateTaskAssigneesMutation = () => {
       queryClient.invalidateQueries({
         queryKey: ["task-activity", data._id],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications"],
+      });
     },
   });
 };
@@ -112,12 +174,89 @@ export const useUpdateTaskPriorityMutation = () => {
   return useMutation({
     mutationFn: (data: { taskId: string; priority: TaskPriority }) =>
       updateData(`/tasks/${data.taskId}/priority`, { priority: data.priority }),
+    onMutate: async (variables) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["project"] });
+      await queryClient.cancelQueries({ queryKey: ["task", variables.taskId] });
+
+      // Snapshot the previous values
+      const previousProjects = queryClient.getQueriesData({ queryKey: ["project"] });
+      const previousTask = queryClient.getQueryData(["task", variables.taskId]);
+
+      // Optimistically update task query
+      queryClient.setQueryData(["task", variables.taskId], (old: any) => {
+        if (!old) return old;
+        return { ...old, priority: variables.priority };
+      });
+
+      // Optimistically update all project queries
+      queryClient.setQueriesData({ queryKey: ["project"] }, (old: any) => {
+        if (!old) return old;
+
+        // Update the task in the tasks array
+        if (old.tasks) {
+          return {
+            ...old,
+            tasks: old.tasks.map((task: any) =>
+              task._id === variables.taskId
+                ? { ...task, priority: variables.priority }
+                : task
+            ),
+          };
+        }
+
+        return old;
+      });
+
+      // Return a context object with the snapshotted values
+      return { previousProjects, previousTask };
+    },
+    onError: (err, variables, context) => {
+      // If the mutation fails, roll back to previous state
+      if (context?.previousProjects) {
+        context.previousProjects.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      if (context?.previousTask) {
+        queryClient.setQueryData(["task", variables.taskId], context.previousTask);
+      }
+    },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({
         queryKey: ["task", data._id],
       });
       queryClient.invalidateQueries({
         queryKey: ["task-activity", data._id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications"],
+      });
+    },
+  });
+};
+
+export const useUpdateTaskDueDateMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { taskId: string; dueDate: string | null }) =>
+      updateData(`/tasks/${data.taskId}/due-date`, { dueDate: data.dueDate }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({
+        queryKey: ["task", data._id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["task-activity", data._id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["workspace", "overall-stats"],
       });
     },
   });

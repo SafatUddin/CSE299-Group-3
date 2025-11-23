@@ -11,23 +11,14 @@ const loginSchema = z.object({
     password: z.string().min(8, "Password must be at least 8 characters long"),
 });
 
-const verifyEmailSchema = z.object({
-    token: z.string().min(1, "Token is required"),
-});
-
 const resetPasswordSchema = z.object({
-    token: z.string().min(1, "Token is required"),
+    email: z.string().email("Invalid email address"),
     newPassword: z.string().min(8, "Password must be at least 8 characters long"),
     confirmPassword: z.string().min(8, "Password must be at least 8 characters long"),
 });
 
 const emailSchema = z.object({
     email: z.string().email("Invalid email address"),
-});
-
-const inviteMemberSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  role: z.enum(["admin", "member", "viewer"]),
 });
 
 const tokenSchema = z.object({
@@ -76,12 +67,10 @@ const taskSchema = z.object({
 export {
   registerSchema,
   loginSchema,
-  verifyEmailSchema,
   resetPasswordSchema,
   emailSchema,
   workspaceSchema,
   projectSchema,
   taskSchema,
-  inviteMemberSchema,
   tokenSchema,
 };

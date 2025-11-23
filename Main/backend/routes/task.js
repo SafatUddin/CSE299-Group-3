@@ -3,8 +3,6 @@ import { z } from "zod";
 import { validateRequest } from "zod-express-middleware";
 import { taskSchema } from "../libs/validate-schema.js";
 import multer from "multer";
-import fs from "fs";
-import path from "path";
 import { 
   createTask,
   getTaskById,
@@ -13,6 +11,7 @@ import {
   updateTaskStatus,
   updateTaskAssignees,
   updateTaskPriority,
+  updateTaskDueDate,
   addSubTask,
   updateSubTask,
   getActivityByResourceId,
@@ -28,12 +27,6 @@ import {
 import authMiddleware from "../middleware/auth-middleware.js";
 
 const router = express.Router();
-
-// Ensure uploads directory exists
-const uploadsDir = 'uploads/attachments';
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -170,6 +163,16 @@ router.put(
     body: z.object({ priority: z.string() }),
   }),
   updateTaskPriority
+);
+
+router.put(
+  "/:taskId/due-date",
+  authMiddleware,
+  validateRequest({
+    params: z.object({ taskId: z.string() }),
+    body: z.object({ dueDate: z.string().optional().nullable() }),
+  }),
+  updateTaskDueDate
 );
 
 router.get(

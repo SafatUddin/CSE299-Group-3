@@ -64,9 +64,17 @@ export const CommentSection = ({
         {comments?.length > 0 ? (
           comments.map((comment) => (
             <div key={comment._id} className="flex gap-4 py-2">
-              <div className="size-8 rounded-full bg-gray-700 flex items-center justify-center text-white font-semibold text-sm">
-                {comment.author.name.charAt(0).toUpperCase()}
-              </div>
+              <Avatar className="size-8">
+                {comment.author.profilePicture && (
+                  <AvatarImage 
+                    src={`${import.meta.env.VITE_API_URL.replace('/api-v1', '')}${comment.author.profilePicture}`}
+                    alt={comment.author.name}
+                  />
+                )}
+                <AvatarFallback className="bg-gray-700 text-white font-semibold text-sm">
+                  {comment.author.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
 
               <div className="flex-1">
                 <div className="flex justify-between items-center mb-1">

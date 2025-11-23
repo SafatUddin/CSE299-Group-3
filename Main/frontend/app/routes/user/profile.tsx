@@ -24,15 +24,18 @@ import {
   useChangePassword,
   useUpdateUserProfile,
   useUserProfileQuery,
+  useUploadProfilePicture,
+  useDeleteProfilePicture,
 } from "@/hooks/use-user";
 import { useAuth } from "@/provider/auth-context";
 import type { User } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, Loader, Loader2 } from "lucide-react";
+import { AlertCircle, Loader, Loader2, Camera, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useRef, useState, useEffect } from "react";
 
 const changePasswordSchema = z
   .object({
@@ -64,6 +67,8 @@ const Profile = () => {
   };
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const form = useForm<ChangePasswordFormData>({
     resolver: zodResolver(changePasswordSchema),
@@ -90,6 +95,10 @@ const Profile = () => {
     isPending: isChangingPassword,
     error,
   } = useChangePassword();
+  const { mutate: uploadProfilePicture, isPending: isUploadingPicture } = 
+    useUploadProfilePicture();
+  const { mutate: deleteProfilePicture, isPending: isDeletingPicture } = 
+    useDeleteProfilePicture();
 
   const handlePasswordChange = (values: ChangePasswordFormData) => {
     changePassword(values, {
@@ -130,6 +139,64 @@ const Profile = () => {
     );
   };
 
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    // Preview image
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload image
+    uploadProfilePicture(file, {
+      onSuccess: () => {
+        toast.success('Profile picture updated successfully');
+      },
+      onError: (error: any) => {
+        toast.error(error.message || 'Failed to upload profile picture');
+        setSelectedImage(null);
+      },
+    });
+  };
+
+  const handleDeleteProfilePicture = () => {
+    if (!user?.profilePicture) return;
+
+    deleteProfilePicture(undefined, {
+      onSuccess: () => {
+        toast.success('Profile picture deleted successfully');
+        setSelectedImage(null);
+      },
+      onError: (error: any) => {
+        toast.error(error.message || 'Failed to delete profile picture');
+      },
+    });
+  };
+
+  const handleCameraClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Clear selected image when user profile picture changes
+  useEffect(() => {
+    setSelectedImage(null);
+  }, [user?.profilePicture]);
+
   if (isPending)
     return (
       <div className="flex justify-center items-center h-screen">
@@ -160,12 +227,85 @@ const Profile = () => {
               onSubmit={profileForm.handleSubmit(handleProfileFormSubmit)}
               className="grid gap-4"
             >
-              <div className="flex items-center space-x-4 mb-6">
-                <Avatar className="h-20 w-20 bg-gray-600">
-                  <AvatarFallback className="text-xl font-semibold text-white">
-                    {user?.name?.charAt(0).toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
+              <div className="flex items-center space-x-6 mb-6">
+                <div className="relative">
+                  <Avatar className="h-24 w-24 bg-gray-600" key={user?.profilePicture || 'no-picture'}>
+                    {(selectedImage || user?.profilePicture) && (
+                      <AvatarImage 
+                        src={selectedImage || (user?.profilePicture ? `${import.meta.env.VITE_API_URL.replace('/api-v1', '')}${user.profilePicture}` : undefined)} 
+                        alt={user?.name}
+                      />
+                    )}
+                    <AvatarFallback className="text-2xl font-semibold text-white">
+                      {user?.name?.charAt(0).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  {/* Camera icon overlay */}
+                  <button
+                    type="button"
+                    onClick={handleCameraClick}
+                    disabled={isUploadingPicture}
+                    className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    {isUploadingPicture ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCameraClick}
+                    disabled={isUploadingPicture}
+                  >
+                    {isUploadingPicture ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      'Change Photo'
+                    )}
+                  </Button>
+                  {user?.profilePicture && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeleteProfilePicture}
+                      disabled={isDeletingPicture}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      {isDeletingPicture ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Remove Photo
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    JPG, PNG or GIF. Max 5MB.
+                  </p>
+                </div>
               </div>
               <FormField
                 control={profileForm.control}

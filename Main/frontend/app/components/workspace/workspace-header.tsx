@@ -72,10 +72,13 @@ export const WorkspaceHeader = ({
                 className="relative h-8 w-8 rounded-full  border-2 border-background overflow-hidden"
                 title={member.user.name}
               >
-                <AvatarImage
-                  src={member.user.profilePicture}
-                  alt={member.user.name}
-                />
+                {member.user.profilePicture && (
+                  <AvatarImage
+                    src={`${import.meta.env.VITE_API_URL.replace('/api-v1', '')}${member.user.profilePicture}`}
+                    alt={member.user.name}
+                    key={member.user.profilePicture}
+                  />
+                )}
                 <AvatarFallback>{member.user.name.charAt(0)}</AvatarFallback>
               </Avatar>
             ))}
