@@ -38,15 +38,19 @@ Follow these steps to run the backend API and the frontend app locally. This rep
 
 (implement this in the backend)
 ```
-OPENSSL_CONF=/home/safat/.mongodb-tls-fix/openssl_no_rh.conf
+OPENSSL_CONF= 
 PORT=5000
-MONGODB_URI=mongodb+srv://SafatUddin:voodoovader@cluster0.eshlohp.mongodb.net/CSE299?retryWrites=true&w=majority&appName=Cluster0
-JWT_SECRET=anakinthechosenonedarthvader
+MONGODB_URI= enter your mogodb link
+JWT_SECRET= enter  your JWT secret key
 FRONTEND_URL=http://localhost:5173
-SEND_GRID_API=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
-FROM_EMAIL=mekakashi17@gmail.com
+BACKEND_URL=http://localhost:5000
+
+# Google OAuth Credentials
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
 ARCJET_ENV=development
-ARCJET_KEY=ajkey_01k7b2wbsnfvsrhgs9dbqxg5e2
+ARCJET_KEY= Get your site key from https://app.arcjet.com
 ```
 
 
