@@ -2,12 +2,16 @@ import Notification from "../models/notification.js";
 
 const createNotification = async (notificationData) => {
   try {
-    console.log("Creating notification:", notificationData);
+    console.log("Creating notification with data:", JSON.stringify(notificationData, null, 2));
+    console.log("User ID type:", typeof notificationData.user);
+    console.log("User ID value:", notificationData.user);
+    
     const notification = await Notification.create(notificationData);
-    console.log("Notification created successfully:", notification._id);
+    console.log("Notification created successfully:", notification._id, "for user:", notification.user);
     return notification;
   } catch (error) {
     console.error("Error creating notification:", error);
+    console.error("Error details:", error.message);
     return null;
   }
 };
@@ -17,12 +21,19 @@ const getUserNotifications = async (req, res) => {
   try {
     const { page = 1, limit = 10, unreadOnly = false } = req.query;
     
-    console.log("Getting notifications for user:", req.user._id, "unreadOnly:", unreadOnly);
+    console.log("=== Getting notifications ===");
+    console.log("User ID:", req.user._id);
+    console.log("User ID type:", typeof req.user._id);
+    console.log("User email:", req.user.email);
+    console.log("User auth provider:", req.user.authProvider);
+    console.log("unreadOnly:", unreadOnly);
 
     const query = { user: req.user._id };
     if (unreadOnly === "true") {
       query.isRead = false;
     }
+
+    console.log("Query:", JSON.stringify(query, null, 2));
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
@@ -36,8 +47,11 @@ const getUserNotifications = async (req, res) => {
       Notification.countDocuments(query),
     ]);
 
-    console.log("Found notifications:", notifications.length);
-    console.log("Notifications data:", JSON.stringify(notifications, null, 2));
+    console.log("Found notifications count:", notifications.length);
+    console.log("Total notifications in DB:", totalNotifications);
+    if (notifications.length > 0) {
+      console.log("Sample notification user ID:", notifications[0].user);
+    }
 
     res.status(200).json({
       notifications,

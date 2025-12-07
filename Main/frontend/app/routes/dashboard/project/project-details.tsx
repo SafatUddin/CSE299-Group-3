@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UseProjectQuery } from "@/hooks/use-project";
 import { useGetWorkspaceDetailsQuery } from "@/hooks/use-workspace";
 import { useUpdateTaskStatusMutation } from "@/hooks/use-task";
+import { useAuth } from "@/provider/auth-context";
+import { toast } from "sonner";
 import { getProjectProgress } from "@/lib";
 import { cn } from "@/lib/utils";
 import type { Project, Task, TaskStatus } from "@/types";
@@ -31,6 +33,7 @@ import {
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 
 const ProjectDetails = () => {
+  const { user } = useAuth();
   const { projectId, workspaceId } = useParams<{
     projectId: string;
     workspaceId: string;
@@ -79,6 +82,21 @@ const ProjectDetails = () => {
   const projectProgress = getProjectProgress(tasks);
 
   const handleTaskClick = (taskId: string) => {
+    // Find the task to check if user is assigned
+    const task = tasks.find((t) => t._id === taskId);
+    if (!task) return;
+
+    // Check if user is assigned to the task
+    const isAssigned = task.assignees?.some(
+      (assignee) => assignee._id === user?._id
+    );
+
+    if (!isAssigned) {
+      toast.error("You are not assigned to this task");
+      return;
+    }
+
+    // Navigate to task details if assigned
     navigate(
       `/workspace/${workspaceId}/projects/${projectId}/tasks/${taskId}`
     );

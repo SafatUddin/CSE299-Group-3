@@ -95,9 +95,12 @@ const MyTasks = () => {
     isLoading: boolean;
   };
 
+  // Filter out tasks with null/deleted projects
+  const validTasks = myTasks?.filter((task) => task.project != null) || [];
+
   const filteredTasks =
-    myTasks?.length > 0
-      ? myTasks
+    validTasks?.length > 0
+      ? validTasks
           .filter((task) => {
             if (filter === "all") return true;
             if (filter === "todo") return task.status === "To Do";

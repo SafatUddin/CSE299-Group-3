@@ -129,7 +129,7 @@ const updateTaskTitle = async (req, res) => {
     const { taskId } = req.params;
     const { title } = req.body;
 
-    const task = await Task.findById(taskId).populate('assignees', '_id');
+    const task = await Task.findById(taskId);
 
     if (!task) {
       return res.status(404).json({
@@ -163,10 +163,10 @@ const updateTaskTitle = async (req, res) => {
     // Notify all assignees except the user making the change
     if (task.assignees && task.assignees.length > 0) {
       const notificationPromises = task.assignees
-        .filter((assignee) => assignee._id.toString() !== req.user._id.toString())
+        .filter((assignee) => assignee.toString() !== req.user._id.toString())
         .map((assignee) =>
           createNotification({
-            user: assignee._id,
+            user: assignee,
             type: "task_description_updated",
             message: `updated the title of task from "${oldTitle}" to "${title}"`,
             resourceType: "Task",
@@ -198,7 +198,7 @@ const updateTaskDescription = async (req, res) => {
     const { taskId } = req.params;
     const { description } = req.body;
 
-    const task = await Task.findById(taskId).populate('assignees', '_id');
+    const task = await Task.findById(taskId);
 
     if (!task) {
       return res.status(404).json({
@@ -236,10 +236,10 @@ const updateTaskDescription = async (req, res) => {
     // Notify all assignees except the user making the change
     if (task.assignees && task.assignees.length > 0) {
       const notificationPromises = task.assignees
-        .filter((assignee) => assignee._id.toString() !== req.user._id.toString())
+        .filter((assignee) => assignee.toString() !== req.user._id.toString())
         .map((assignee) =>
           createNotification({
-            user: assignee._id,
+            user: assignee,
             type: "task_description_updated",
             message: `updated the description for task "${task.title}"`,
             resourceType: "Task",
@@ -271,7 +271,7 @@ const updateTaskStatus = async (req, res) => {
     const { taskId } = req.params;
     const { status } = req.body;
 
-    const task = await Task.findById(taskId).populate('assignees', '_id');
+    const task = await Task.findById(taskId);
 
     if (!task) {
       return res.status(404).json({
@@ -305,10 +305,10 @@ const updateTaskStatus = async (req, res) => {
     // Notify all assignees except the user making the change
     if (task.assignees && task.assignees.length > 0) {
       const notificationPromises = task.assignees
-        .filter((assignee) => assignee._id.toString() !== req.user._id.toString())
+        .filter((assignee) => assignee.toString() !== req.user._id.toString())
         .map((assignee) =>
           createNotification({
-            user: assignee._id,
+            user: assignee,
             type: "task_status_updated",
             message: `changed status of task "${task.title}" from ${oldStatus} to ${status}`,
             resourceType: "Task",
@@ -413,7 +413,7 @@ const updateTaskPriority = async (req, res) => {
     const { taskId } = req.params;
     const { priority } = req.body;
 
-    const task = await Task.findById(taskId).populate('assignees', '_id');
+    const task = await Task.findById(taskId);
 
     if (!task) {
       return res.status(404).json({
@@ -447,10 +447,10 @@ const updateTaskPriority = async (req, res) => {
     // Notify all assignees except the user making the change
     if (task.assignees && task.assignees.length > 0) {
       const notificationPromises = task.assignees
-        .filter((assignee) => assignee._id.toString() !== req.user._id.toString())
+        .filter((assignee) => assignee.toString() !== req.user._id.toString())
         .map((assignee) =>
           createNotification({
-            user: assignee._id,
+            user: assignee,
             type: "task_priority_updated",
             message: `changed priority of task "${task.title}" from ${oldPriority} to ${priority}`,
             resourceType: "Task",
@@ -482,7 +482,7 @@ const updateTaskDueDate = async (req, res) => {
     const { taskId } = req.params;
     const { dueDate } = req.body;
 
-    const task = await Task.findById(taskId).populate('assignees', '_id');
+    const task = await Task.findById(taskId);
 
     if (!task) {
       return res.status(404).json({
@@ -521,10 +521,10 @@ const updateTaskDueDate = async (req, res) => {
     // Notify all assignees except the user making the change
     if (task.assignees && task.assignees.length > 0) {
       const notificationPromises = task.assignees
-        .filter((assignee) => assignee._id.toString() !== req.user._id.toString())
+        .filter((assignee) => assignee.toString() !== req.user._id.toString())
         .map((assignee) =>
           createNotification({
-            user: assignee._id,
+            user: assignee,
             type: "task_due_date_updated",
             message: `changed due date of task "${task.title}" from ${oldDueDate} to ${newDueDateStr}`,
             resourceType: "Task",
@@ -589,6 +589,25 @@ const addSubTask = async (req, res) => {
 
     task.subtasks.push(newSubTask);
     await task.save();
+
+    // Notify all assignees except the user making the change
+    if (task.assignees && task.assignees.length > 0) {
+      const notificationPromises = task.assignees
+        .filter((assignee) => assignee.toString() !== req.user._id.toString())
+        .map((assignee) =>
+          createNotification({
+            user: assignee,
+            type: "task_description_updated",
+            message: `added a subtask "${title}" to task "${task.title}"`,
+            resourceType: "Task",
+            resourceId: task._id,
+            workspace: project.workspace,
+            actionBy: req.user._id,
+          })
+        );
+      
+      await Promise.all(notificationPromises);
+    }
 
     // record activity
     await recordActivity(req.user._id, "created_subtask", "Task", taskId, {
@@ -774,6 +793,25 @@ const addComment = async (req, res) => {
 
     task.comments.push(newComment._id);
     await task.save();
+
+    // Notify all assignees except the user making the change
+    if (task.assignees && task.assignees.length > 0) {
+      const notificationPromises = task.assignees
+        .filter((assignee) => assignee.toString() !== req.user._id.toString())
+        .map((assignee) =>
+          createNotification({
+            user: assignee,
+            type: "task_description_updated",
+            message: `commented on task "${task.title}"`,
+            resourceType: "Task",
+            resourceId: task._id,
+            workspace: project.workspace,
+            actionBy: req.user._id,
+          })
+        );
+      
+      await Promise.all(notificationPromises);
+    }
 
     // record activity
     await recordActivity(req.user._id, "added_comment", "Task", taskId, {
@@ -961,13 +999,27 @@ const uploadAttachment = async (req, res) => {
     task.attachments.push(attachment);
     await task.save();
 
-    await recordActivity({
-      user: req.user._id,
-      action: "uploaded",
-      resourceType: "attachment",
-      resourceId: task._id,
-      resourceName: req.file.originalname,
-      workspace: workspace._id,
+    // Notify all assignees except the user making the change
+    if (task.assignees && task.assignees.length > 0) {
+      const notificationPromises = task.assignees
+        .filter((assignee) => assignee.toString() !== req.user._id.toString())
+        .map((assignee) =>
+          createNotification({
+            user: assignee,
+            type: "task_description_updated",
+            message: `uploaded a file "${req.file.originalname}" to task "${task.title}"`,
+            resourceType: "Task",
+            resourceId: task._id,
+            workspace: workspace._id,
+            actionBy: req.user._id,
+          })
+        );
+      
+      await Promise.all(notificationPromises);
+    }
+
+    await recordActivity(req.user._id, "added_attachment", "Task", task._id, {
+      description: `uploaded a file "${req.file.originalname}"`,
     });
 
     res.status(200).json({
@@ -1028,13 +1080,8 @@ const addLinkAttachment = async (req, res) => {
     await task.save();
     console.log("[ADD LINK] Link attachment added successfully");
 
-    await recordActivity({
-      user: req.user._id,
-      action: "added",
-      resourceType: "link",
-      resourceId: task._id,
-      resourceName: name,
-      workspace: workspace._id,
+    await recordActivity(req.user._id, "added_attachment", "Task", task._id, {
+      description: `added a link "${name}"`,
     });
 
     res.status(200).json({
@@ -1119,6 +1166,70 @@ const deleteAttachment = async (req, res) => {
   }
 };
 
+const deleteTask = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+
+    const task = await Task.findById(taskId);
+
+    if (!task) {
+      return res.status(404).json({
+        message: "Task not found",
+      });
+    }
+
+    // Check if user has permission to delete this task
+    const project = await Project.findById(task.project);
+
+    if (!project) {
+      return res.status(404).json({
+        message: "Project not found",
+      });
+    }
+
+    const isMember = project.members.some(
+      (member) => member.user.toString() === req.user._id.toString()
+    );
+
+    if (!isMember) {
+      return res.status(403).json({
+        message: "You are not a member of this project",
+      });
+    }
+
+    // Delete the task
+    await Task.findByIdAndDelete(taskId);
+
+    // Notify all assignees that the task was deleted
+    if (task.assignees && task.assignees.length > 0) {
+      const notificationPromises = task.assignees
+        .filter((assignee) => assignee.toString() !== req.user._id.toString())
+        .map((assignee) =>
+          createNotification({
+            user: assignee,
+            type: "task_description_updated",
+            message: `deleted task "${task.title}"`,
+            resourceType: "Task",
+            resourceId: task._id,
+            workspace: project.workspace,
+            actionBy: req.user._id,
+          })
+        );
+      
+      await Promise.all(notificationPromises);
+    }
+
+    res.status(200).json({
+      message: "Task deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting task:", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
 export { 
   createTask,
   getTaskById,
@@ -1138,5 +1249,6 @@ export {
   getMyTasks,
   uploadAttachment,
   addLinkAttachment,
-  deleteAttachment
+  deleteAttachment,
+  deleteTask
 };

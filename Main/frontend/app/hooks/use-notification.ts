@@ -36,7 +36,7 @@ export const useGetNotifications = (params: GetNotificationsParams = {}) => {
       );
       return response;
     },
-    refetchInterval: 5000, // Refetch every 5 seconds for near real-time updates
+    refetchInterval: 2000, // Refetch every 2 seconds for near real-time updates
   });
 };
 
@@ -49,7 +49,7 @@ export const useGetUnreadCount = () => {
       );
       return response.count;
     },
-    refetchInterval: 5000, // Refetch every 5 seconds for near real-time updates
+    refetchInterval: 2000, // Refetch every 2 seconds for near real-time updates
   });
 };
 

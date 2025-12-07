@@ -8,6 +8,7 @@ export const TaskActivity = ({ resourceId }: { resourceId: string }) => {
   const { data, isPending } = useQuery({
     queryKey: ["task-activity", resourceId],
     queryFn: () => fetchData(`/tasks/${resourceId}/activity`),
+    refetchInterval: 500, // Refetch every 0.5 second for instant activity updates
   }) as {
     data: ActivityLog[];
     isPending: boolean;

@@ -17,6 +17,7 @@ import {
   useAchievedTaskMutation,
   useTaskByIdQuery,
   useWatchTaskMutation,
+  useDeleteTaskMutation,
 } from "@/hooks/use-task";
 import { useAuth } from "@/provider/auth-context";
 import type { Project, Task } from "@/types";
@@ -24,7 +25,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 const TaskDetails = () => {
   const { user } = useAuth();
@@ -34,7 +35,6 @@ const TaskDetails = () => {
     workspaceId: string;
   }>();
   const navigate = useNavigate();
-  const hasRedirected = useRef(false);
 
   const { data, isLoading, error } = useTaskByIdQuery(taskId!) as {
     data: {
@@ -45,19 +45,22 @@ const TaskDetails = () => {
     error: any;
   };
 
-  // Handle 403 error - show toast notification
-  useEffect(() => {
-    if (error?.response?.status === 403 && !hasRedirected.current) {
-      hasRedirected.current = true;
-      toast.error("You are not assigned to this task");
-      // Go back instead of navigating to avoid duplicate history entries
-      window.history.back();
-    }
-  }, [error]);
-
   const { mutate: watchTask, isPending: isWatching } = useWatchTaskMutation();
   const { mutate: achievedTask, isPending: isAchieved } =
     useAchievedTaskMutation();
+  const { mutate: deleteTask, isPending: isDeleting } = useDeleteTaskMutation();
+
+  // Handle 403 error - redirect to project details with toast
+  useEffect(() => {
+    if (error?.response?.status === 403) {
+      toast.error("You are not assigned to this task");
+      // Use setTimeout to ensure toast shows before redirect
+      const timer = setTimeout(() => {
+        navigate(`/workspace/${workspaceId}/projects/${projectId}`, { replace: true });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [error, navigate, workspaceId, projectId]);
 
   if (isLoading) {
     return (
@@ -67,7 +70,16 @@ const TaskDetails = () => {
     );
   }
 
-  // Don't show "Task not found" for 403 errors, redirect will happen
+  // If there's a 403 error, show loading while redirecting
+  if (error?.response?.status === 403) {
+    return (
+      <div>
+        <Loader />
+      </div>
+    );
+  }
+
+  // Don't show "Task not found" for other errors
   if (!data && !error) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -209,10 +221,23 @@ const TaskDetails = () => {
               <Button
                 variant={"destructive"}
                 size="sm"
-                onClick={() => {}}
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to delete this task? This action cannot be undone.")) {
+                    deleteTask(taskId!, {
+                      onSuccess: () => {
+                        toast.success("Task deleted successfully");
+                        navigate(`/workspace/${workspaceId}/projects/${projectId}`);
+                      },
+                      onError: (error: any) => {
+                        toast.error(error.message || "Failed to delete task");
+                      },
+                    });
+                  }
+                }}
+                disabled={isDeleting}
                 className="whitespace-nowrap"
               >
-                Delete Task
+                {isDeleting ? "Deleting..." : "Delete Task"}
               </Button>
             </div>
 

@@ -28,7 +28,7 @@ export const useGetWorkspaceById = (workspaceId: string) => {
   return useQuery({
     queryKey: ["workspace", workspaceId],
     queryFn: async () => fetchData(`/workspace/${workspaceId}/projects`),
-    refetchInterval: 3000, // Refetch every 3 seconds for real-time project updates
+    refetchInterval: 1000, // Refetch every 1 second for real-time project updates
   });
 };
 

@@ -23,6 +23,7 @@ export const useTaskByIdQuery = (taskId: string) => {
   return useQuery({
     queryKey: ["task", taskId],
     queryFn: () => fetchData(`/tasks/${taskId}`),
+    refetchInterval: 500, // Refetch every 0.5 second for real-time updates
     retry: (failureCount, error: any) => {
       // Don't retry on 403 (forbidden) errors
       if (error?.response?.status === 403) {
@@ -360,6 +361,7 @@ export const useGetCommentsByTaskIdQuery = (taskId: string) => {
   return useQuery({
     queryKey: ["comments", taskId],
     queryFn: () => fetchData(`/tasks/${taskId}/comments`),
+    refetchInterval: 500, // Refetch every 0.5 second for instant comment updates
   });
 };
 
@@ -401,6 +403,7 @@ export const useGetMyTasksQuery = () => {
   return useQuery({
     queryKey: ["my-tasks", "user"],
     queryFn: () => fetchData("/tasks/my-tasks"),
+    refetchInterval: 1000, // Refetch every 1 second for real-time updates
   });
 };
 
@@ -437,6 +440,42 @@ export const useUploadAttachmentMutation = () => {
       });
       queryClient.invalidateQueries({
         queryKey: ["task-activity", variables.taskId],
+      });
+    },
+  });
+};
+
+export const useDeleteTaskMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (taskId: string) => {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_URL}/tasks/${taskId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete task");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate project queries to refresh task lists
+      queryClient.invalidateQueries({
+        queryKey: ["project"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["my-tasks"],
       });
     },
   });

@@ -22,7 +22,8 @@ import {
   getMyTasks,
   uploadAttachment,
   addLinkAttachment,
-  deleteAttachment
+  deleteAttachment,
+  deleteTask
 } from "../controllers/task.js";
 import authMiddleware from "../middleware/auth-middleware.js";
 
@@ -234,6 +235,17 @@ router.delete(
     }),
   }),
   deleteAttachment
+);
+
+router.delete(
+  "/:taskId",
+  authMiddleware,
+  validateRequest({
+    params: z.object({ 
+      taskId: z.string()
+    }),
+  }),
+  deleteTask
 );
 
 export default router;
