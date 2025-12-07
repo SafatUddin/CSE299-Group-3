@@ -12,6 +12,27 @@
 
 # ProjectFlow -> A project management app
 
+## Final Demonstration
+
+[Final Demonstration Video]()
+
+## Project Proposal
+
+[Project Proposal Report](./Others/CSE299_Project_Proposal_Group-3.pdf)
+
+[Project Proposal Slides](./Others/Project_Proposal_Group-3_Presentation.pdf)
+
+****
+## Literature Review
+
+[Literature Review Slides](./Others/Literature_Review_Group_3.pdf)
+
+## Proposed Solution
+
+[Proposed Solution Report](./Others/Proposed_solution_report_group_3.pdf)
+
+****
+
 ### Clone this repository
 
 You can clone via HTTPS or SSH:
@@ -102,25 +123,7 @@ Ensure your production environment variables are set appropriately before starti
 
 
 
-## Proposal
-### Project Proposal
 
-[Project Proposal Report](./Others/CSE299_Project_Proposal_Group-3.pdf)
-
-### Project Proposal Slides
-
-[Project Proposal Slides](./Others/Project_Proposal_Group-3_Presentation.pdf)
-
-****
-## Literature Review
-
-[Literature Review Slides](./Others/Literature_Review_Group_3.pdf)
-
-## Proposed Solution
-
-[Proposed Solution Report](./Others/Proposed_solution_report_group_3.pdf)
-
-****
 ## Update-1
 
 [Update-1 Video Demo](https://youtu.be/MfleyOah9Zo)
