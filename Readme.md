@@ -10,11 +10,15 @@
 
 ****
 
-# ProjectFlow -> A project management app
+# ProjectFlow -> A Project Management App
 
-## Final Demonstration
+## Project Demonstration, Report & Presentation
 
-[Final Demonstration Video](https://www.youtube.com/watch?v=zGyO9HiDR3A)
+[Project Demonstration Video](https://www.youtube.com/watch?v=zGyO9HiDR3A)
+
+[Project Report](./Others/CSE299_Project_Report.pdf)
+
+[Project Presentation]()
 
 ## Project Proposal
 
