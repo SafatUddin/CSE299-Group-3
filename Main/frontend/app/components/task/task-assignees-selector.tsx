@@ -79,7 +79,7 @@ export const TaskAssigneesSelector = ({
             .map((m) => (
               <div
                 key={m.user._id}
-                className="flex items-center bg-gray-800 border border-gray-700 rounded px-2 py-1"
+                className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded px-2 py-1"
               >
                 <Avatar className="size-6 mr-1">
                   {m.user.profilePicture && (
@@ -88,11 +88,11 @@ export const TaskAssigneesSelector = ({
                       alt={m.user.name}
                     />
                   )}
-                  <AvatarFallback className="bg-gray-700 text-white font-semibold text-xs">
+                  <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold text-xs">
                     {m.user.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-xs text-gray-300">
+                <span className="text-xs text-gray-900 dark:text-gray-300">
                   {m.user.name}
                 </span>
               </div>
@@ -103,7 +103,7 @@ export const TaskAssigneesSelector = ({
       {/* dropdown */}
       <div className="relative">
         <button
-          className="text-sm text-muted-foreground w-full border rounded px-3 py-2 text-left bg-gray-800 hover:bg-gray-700"
+          className="text-sm text-muted-foreground w-full border rounded px-3 py-2 text-left bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
           onClick={() => setDropDownOpen(!dropDownOpen)}
         >
           {selectedIds.length === 0
@@ -112,16 +112,16 @@ export const TaskAssigneesSelector = ({
         </button>
 
         {dropDownOpen && (
-          <div className="absolute z-10 mt-1 w-full bg-gray-800 border border-gray-700 rounded shadow-lg max-h-60 overflow-y-auto">
-            <div className="flex justify-between px-2 py-1 border-b border-gray-700">
+          <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded shadow-lg max-h-60 overflow-y-auto">
+            <div className="flex justify-between px-2 py-1 border-b border-gray-300 dark:border-gray-700">
               <button
-                className="text-xs text-blue-400"
+                className="text-xs text-blue-600 dark:text-blue-400"
                 onClick={handleSelectAll}
               >
                 Select all
               </button>
               <button
-                className="text-xs text-red-400"
+                className="text-xs text-red-600 dark:text-red-400"
                 onClick={handleUnSelectAll}
               >
                 Unselect all
@@ -130,7 +130,7 @@ export const TaskAssigneesSelector = ({
 
             {projectMembers.map((m) => (
               <label
-                className="flex items-center px-3 py-2 cursor-pointer hover:bg-gray-700"
+                className="flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                 key={m.user._id}
               >
                 <Checkbox
@@ -146,12 +146,12 @@ export const TaskAssigneesSelector = ({
                       alt={m.user.name}
                     />
                   )}
-                  <AvatarFallback className="bg-gray-700 text-white font-semibold text-xs">
+                  <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold text-xs">
                     {m.user.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
 
-                <span>{m.user.name}</span>
+                <span className="text-gray-900 dark:text-gray-200">{m.user.name}</span>
               </label>
             ))}
 

@@ -65,25 +65,28 @@ export const Header = ({
 
   return (
     <div className="bg-background sticky top-0 z-40 border-b">
-      <div className="flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 py-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant={"outline"}>
-              {selectedWorkspace ? (
-                <>
-                  {selectedWorkspace.color && (
-                    <WorkspaceAvatar
-                      color={selectedWorkspace.color}
-                      name={selectedWorkspace.name}
-                    />
-                  )}
-                  <span className="font-medium">{selectedWorkspace?.name}</span>
-                </>
-              ) : (
-                <span className="font-medium">Select Workspace</span>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
+      <div className="flex h-12 items-center justify-between px-2 py-2 gap-2 min-w-0">
+        <div className="flex-shrink min-w-0 max-w-[45%] sm:max-w-none sm:w-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant={"outline"} className="text-sm w-full sm:w-auto min-w-0">
+                {selectedWorkspace ? (
+                  <div className="flex items-center gap-1.5 min-w-0 w-full">
+                    {selectedWorkspace.color && (
+                      <div className="flex-shrink-0">
+                        <WorkspaceAvatar
+                          color={selectedWorkspace.color}
+                          name={selectedWorkspace.name}
+                        />
+                      </div>
+                    )}
+                    <span className="font-medium truncate text-xs sm:text-sm">{selectedWorkspace?.name}</span>
+                  </div>
+                ) : (
+                  <span className="font-medium text-xs sm:text-sm">Select Workspace</span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
 
           <DropdownMenuContent>
             <DropdownMenuLabel>Workspace</DropdownMenuLabel>
@@ -117,14 +120,15 @@ export const Header = ({
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <ThemeToggle />
           <NotificationDropdown />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="rounded-full border p-0 w-10 h-10 overflow-hidden">
+              <button className="rounded-full border p-0 w-8 h-8 overflow-hidden flex-shrink-0">
                 <Avatar className="w-full h-full" key={user?.profilePicture || 'no-picture'}>
                   {user?.profilePicture && (
                     <AvatarImage

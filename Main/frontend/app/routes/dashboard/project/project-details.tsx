@@ -17,7 +17,7 @@ import { getProjectProgress } from "@/lib";
 import { cn } from "@/lib/utils";
 import type { Project, Task, TaskStatus } from "@/types";
 import { format } from "date-fns";
-import { Calendar, Pencil } from "lucide-react";
+import { Calendar, Pencil, Plus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
@@ -160,41 +160,44 @@ const ProjectDetails = () => {
   const activeTask = tasks.find((t) => t._id === activeTaskId);
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 overflow-x-hidden w-full">
+      <div className="space-y-3">
         <div>
           <BackButton />
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl md:text-2xl font-bold">{project.title}</h1>
-          </div>
+          <h1 className="text-xl md:text-2xl font-bold">{project.title}</h1>
           {project.description && (
-            <p className="text-sm text-gray-500">{project.description}</p>
+            <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex items-center gap-2 min-w-32">
-            <div className="text-sm text-muted-foreground">Progress:</div>
-            <div className="flex-1">
-              <Progress value={projectProgress} className="h-2" />
-            </div>
-            <span className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2 bg-muted/50 dark:bg-gray-800 dark:border dark:border-gray-700 rounded-lg px-3 py-2 w-fit">
+            <span className="text-sm text-muted-foreground dark:text-gray-300 whitespace-nowrap">Progress:</span>
+            <Progress value={projectProgress} className="h-2 w-24" />
+            <span className="text-sm font-medium dark:text-gray-200 whitespace-nowrap">
               {projectProgress}%
             </span>
           </div>
 
-          <Button
-            variant="outline"
-            onClick={() => setIsEditProject(true)}
-          >
-            <Pencil className="h-4 w-4 mr-2" />
-            Edit Project
-          </Button>
-          <Button onClick={() => setIsCreateTask(true)}>Add Task</Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsEditProject(true)}
+              size="sm"
+              className="dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button onClick={() => setIsCreateTask(true)} size="sm" className="dark:bg-primary dark:text-primary-foreground">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Task
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -203,36 +206,36 @@ const ProjectDetails = () => {
           onDragCancel={handleDragCancel}
         >
           <Tabs defaultValue="all" className="w-full">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <TabsList>
-                <TabsTrigger value="all" onClick={() => setTaskFilter("All")}>
-                  All Tasks
-                </TabsTrigger>
-                <TabsTrigger value="todo" onClick={() => setTaskFilter("To Do")}>
-                  To Do
-                </TabsTrigger>
-                <TabsTrigger
-                  value="in-progress"
-                  onClick={() => setTaskFilter("In Progress")}
-                >
-                  In Progress
-                </TabsTrigger>
-                <TabsTrigger value="done" onClick={() => setTaskFilter("Done")}>
-                  Done
-                </TabsTrigger>
-              </TabsList>
+            <div className="space-y-4 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <TabsList className="inline-flex dark:bg-gray-800 dark:border dark:border-gray-700">
+                  <TabsTrigger value="all" onClick={() => setTaskFilter("All")} className="dark:data-[state=active]:bg-gray-700 dark:text-gray-300 dark:data-[state=active]:text-white">
+                    All Tasks
+                  </TabsTrigger>
+                  <TabsTrigger value="todo" onClick={() => setTaskFilter("To Do")} className="dark:data-[state=active]:bg-gray-700 dark:text-gray-300 dark:data-[state=active]:text-white">
+                    To Do
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="in-progress"
+                    onClick={() => setTaskFilter("In Progress")}
+                    className="dark:data-[state=active]:bg-gray-700 dark:text-gray-300 dark:data-[state=active]:text-white"
+                  >
+                    In Progress
+                  </TabsTrigger>
+                  <TabsTrigger value="done" onClick={() => setTaskFilter("Done")} className="dark:data-[state=active]:bg-gray-700 dark:text-gray-300 dark:data-[state=active]:text-white">
+                    Done
+                  </TabsTrigger>
+                </TabsList>
 
-              <div className="flex items-center text-sm">
-                <span className="text-muted-foreground">Status:</span>
-                <div>
-                  <Badge variant="outline" className="bg-background">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="text-muted-foreground dark:text-gray-300">Status:</span>
+                  <Badge variant="outline" className="bg-background dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
                     {tasks.filter((task) => task.status === "To Do").length} To Do
                   </Badge>
-                  <Badge variant="outline" className="bg-background">
-                    {tasks.filter((task) => task.status === "In Progress").length}{" "}
-                    In Progress
+                  <Badge variant="outline" className="bg-background dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
+                    {tasks.filter((task) => task.status === "In Progress").length} In Progress
                   </Badge>
-                  <Badge variant="outline" className="bg-background">
+                  <Badge variant="outline" className="bg-background dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200">
                     {tasks.filter((task) => task.status === "Done").length} Done
                   </Badge>
                 </div>
@@ -240,27 +243,29 @@ const ProjectDetails = () => {
             </div>
 
             <TabsContent value="all" className="m-0">
-              <div className="grid grid-cols-3 gap-4">
-                <DroppableColumn
-                  id="To Do"
-                  title="To Do"
-                  tasks={tasks.filter((task) => task.status === "To Do")}
-                  onTaskClick={handleTaskClick}
-                />
+              <div className="overflow-x-auto overflow-y-visible pb-2 scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                <div className="flex gap-4 min-w-max md:grid md:grid-cols-3 md:min-w-0">
+                  <DroppableColumn
+                    id="To Do"
+                    title="To Do"
+                    tasks={tasks.filter((task) => task.status === "To Do")}
+                    onTaskClick={handleTaskClick}
+                  />
 
-                <DroppableColumn
-                  id="In Progress"
-                  title="In Progress"
-                  tasks={tasks.filter((task) => task.status === "In Progress")}
-                  onTaskClick={handleTaskClick}
-                />
+                  <DroppableColumn
+                    id="In Progress"
+                    title="In Progress"
+                    tasks={tasks.filter((task) => task.status === "In Progress")}
+                    onTaskClick={handleTaskClick}
+                  />
 
-                <DroppableColumn
-                  id="Done"
-                  title="Done"
-                  tasks={tasks.filter((task) => task.status === "Done")}
-                  onTaskClick={handleTaskClick}
-                />
+                  <DroppableColumn
+                    id="Done"
+                    title="Done"
+                    tasks={tasks.filter((task) => task.status === "Done")}
+                    onTaskClick={handleTaskClick}
+                  />
+                </div>
               </div>
             </TabsContent>
 
@@ -363,10 +368,10 @@ const DroppableColumn = ({
         "rounded-lg border-2 p-4 transition-all duration-200",
         isOver
           ? "border-primary bg-primary/20 ring-2 ring-primary ring-offset-2"
-          : "border-border bg-muted/30 ",
+          : "border-border bg-muted/50 dark:bg-gray-800/80 dark:border-gray-600",
         isFullWidth
           ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-          : "min-h-[500px]"
+          : "min-h-[500px] w-full md:w-auto min-w-[300px] md:min-w-0 flex-shrink-0"
       )}
     >
       <div
@@ -376,9 +381,9 @@ const DroppableColumn = ({
         )}
       >
         {!isFullWidth && (
-          <div className="flex items-center justify-between">
-            <h1 className="font-medium">{title}</h1>
-            <Badge variant="outline">{tasks.length}</Badge>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="font-medium text-foreground dark:text-gray-100">{title}</h1>
+            <Badge variant="outline" className="dark:bg-gray-700 dark:border-gray-500 dark:text-gray-200">{tasks.length}</Badge>
           </div>
         )}
 
@@ -525,6 +530,7 @@ const TaskCard = ({
       className={cn(
         "cursor-grab active:cursor-grabbing transition-all duration-300",
         "hover:shadow-lg hover:scale-[1.02] hover:border-primary/50",
+        "dark:bg-gray-700/80 dark:border-gray-600 dark:shadow-lg",
         isDragging && "opacity-50 cursor-grabbing"
       )}
     >
