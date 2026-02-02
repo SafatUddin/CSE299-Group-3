@@ -21,3 +21,10 @@ export const useResetPasswordMutation = () => {
         postData("/auth/reset-password", data),
   });
 };
+
+export const useVerifyEmailMutation = () => {
+  return useMutation({
+    mutationFn: (data: { token: string }) =>
+        postData("/auth/verify-email", data),
+  });
+};
