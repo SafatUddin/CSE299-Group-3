@@ -7,10 +7,10 @@ You can clone via HTTPS or SSH:
 
 ```bash
 # HTTPS
-git clone https://github.com/SafatUddin/CSE299-Group-3.git
+git clone https://github.com/SafatUddin/CSE299_ProjectFlow_A_Project_Management_App.git
 
 # or SSH
-git clone git@github.com:SafatUddin/CSE299-Group-3.git
+git clone git@github.com:SafatUddin/CSE299_ProjectFlow_A_Project_Management_App.git
 ```
 
 Then:
