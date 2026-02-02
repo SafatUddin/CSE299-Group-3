@@ -2,6 +2,7 @@
   <h1>🚀 ProjectFlow</h1>
   <p><strong>A Modern Project Management & Collaboration Platform</strong></p>
   <p>
+    <a href="https://cse-299-project-flow-a-project-mana.vercel.app" target="_blank">🌐 Live Demo</a> •
     <a href="#features">Features</a> •
     <a href="#tech-stack">Tech Stack</a> •
     <a href="#getting-started">Getting Started</a> •
