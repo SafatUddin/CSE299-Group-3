@@ -499,8 +499,7 @@ This project wouldn't be possible without these amazing open-source projects:
   
   ---
   
-  **Built by [Safat Uddin](https://github.com/SafatUddin) **
+  **Built by [Safat Uddin](https://github.com/SafatUddin)**
   
-  *Empowering teams to collaborate better, one task at a time.*
   
 </div>
