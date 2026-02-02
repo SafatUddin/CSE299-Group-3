@@ -1,8 +1,5 @@
-# Project Management App (ProjectFlow) - Final Project Report
-
-
-**Project Name:** Project Management App  **(Project Flow)**  
-**Team:** CSE299-Group-3  
+# ProjectFlow: A Project Management App  - Final Project Report
+ 
 
 ---
 
